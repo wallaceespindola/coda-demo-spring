@@ -1,4 +1,4 @@
-package com.example.coda.actuator;
+package com.example.coda.config;
 
 import java.time.Instant;
 import java.time.ZoneId;

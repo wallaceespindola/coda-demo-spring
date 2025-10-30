@@ -12,6 +12,13 @@ management:
     health:
       show-details: always
 
+info:
+  app:
+    name: CODA Demo Spring
+    version: 1.0.0
+    description: Demo API for CODA statement generation
+    buildDate: 2025-10-30
+
 # springdoc OpenAPI configuration
 springdoc:
   api-docs:

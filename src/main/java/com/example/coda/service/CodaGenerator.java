@@ -40,24 +40,24 @@ public class CodaGenerator
             continue;
          }
 
-         boolean credit = tx.getType() == TransactionType.CREDIT;
+         boolean credit = tx.type() == TransactionType.CREDIT;
          if (credit)
          {
-            totalCredits = totalCredits.add(tx.getAmount());
+            totalCredits = totalCredits.add(tx.amount());
          }
          else
          {
-            totalDebits = totalDebits.add(tx.getAmount());
+            totalDebits = totalDebits.add(tx.amount());
          }
 
          sb.append(record("200", lineNo++))
-               .append(tx.getBookingDate().format(YYYYMMDD))
+               .append(tx.bookingDate().format(YYYYMMDD))
                .append(credit ? "CR" : "DB")
-               .append(padLeft(amountToCents(tx.getAmount()), 15, '0'))
-               .append(padRight(safe(tx.getCounterpartyAccount()), 18))
-               .append(padRight(safe(tx.getCounterpartyName()), 30))
-               .append(padRight(safe(tx.getDescription()), 25))
-               .append(padRight(safe(tx.getReference()), 25))
+               .append(padLeft(amountToCents(tx.amount()), 15, '0'))
+               .append(padRight(safe(tx.counterpartyAccount()), 18))
+               .append(padRight(safe(tx.counterpartyName()), 30))
+               .append(padRight(safe(tx.description()), 25))
+               .append(padRight(safe(tx.reference()), 25))
                .append("\n");
       }
 

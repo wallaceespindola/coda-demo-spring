@@ -1,4 +1,4 @@
-package com.example.coda.web;
+package com.example.coda.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

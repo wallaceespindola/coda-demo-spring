@@ -1,4 +1,4 @@
-package com.example.coda.web;
+package com.example.coda.controller;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.OffsetDateTime;

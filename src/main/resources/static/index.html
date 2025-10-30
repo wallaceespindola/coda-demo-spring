@@ -176,15 +176,15 @@
     </section>
 
     <section>
-        <h2>GET /coda (inline)</h2>
+        <h2>GET /api/coda/generate (inline)</h2>
         <div class="small">Add repeatable <code>tx</code> lines (one per line):
             TYPE:YYYY-MM-DD:AMOUNT:ACCOUNT:NAME:DESC:REF
         </div>
         <textarea id="txGet">CREDIT:2025-09-03:125.00:BE12 3456 7890 1234:CLIENT X:Payment received:INV-2025-0456
 DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-0042</textarea>
         <div class="btns">
-            <button id="btnCodaGet">Call /coda</button>
-            <button class="ghost" id="btnCodaGetBad">Call /coda (bad tx)</button>
+            <button id="btnCodaGet">Call /api/coda/generate</button>
+            <button class="ghost" id="btnCodaGetBad">Call /api/coda/generate (bad tx)</button>
             <a class="btn secondary" id="btnCodaGetOpen" href="#" target="_blank">Open in new tab</a>
         </div>
         <div class="small">Status: <span id="statusCodaGet" class="status"></span></div>
@@ -192,7 +192,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
     </section>
 
     <section>
-        <h2>GET /coda/download (attachment)</h2>
+        <h2>GET /api/coda/download (attachment)</h2>
         <div class="btns">
             <a class="btn" id="btnCodaDownload" href="#" download>Download file</a>
         </div>
@@ -200,7 +200,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
     </section>
 
     <section>
-        <h2>POST /coda/json (inline) &nbsp; /coda/json/download (attachment)</h2>
+        <h2>POST /api/coda/json (inline) &nbsp; /api/coda/json/download (attachment)</h2>
         <div class="grid-2">
             <div>
                 <label>JSON body</label>
@@ -232,8 +232,8 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
   ]
 }</textarea>
                 <div class="btns">
-                    <button id="btnJsonInline">POST /coda/json</button>
-                    <button class="secondary" id="btnJsonDownload">POST /coda/json/download</button>
+                    <button id="btnJsonInline">POST /api/coda/json</button>
+                    <button class="secondary" id="btnJsonDownload">POST /api/coda/json/download</button>
                 </div>
             </div>
             <div>
@@ -243,14 +243,6 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
         </div>
     </section>
 
-    <section>
-        <h2>Actuator</h2>
-        <div class="btns">
-            <button id="btnHealth">GET /actuator/health</button>
-            <button id="btnInfo">GET /actuator/info</button>
-        </div>
-        <pre id="outActuator"></pre>
-    </section>
 </main>
 
 <script>
@@ -264,7 +256,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
         const opening = encodeURIComponent($('opening').value || '1200.00');
         const txLines = ($('txGet').value || '').split('\\n').map(s => s.trim()).filter(Boolean)
             .map(v => '&tx=' + encodeURIComponent(v)).join('');
-        const basePath = download ? '/coda/download' : '/coda';
+        const basePath = download ? '/api/coda/download' : '/api/coda/generate';
         const fn = $('filename').value ? '&filename=' + encodeURIComponent($('filename').value) : '';
         return `${basePath}?bankName=${bankName}&account=${account}&currency=${currency}${date}&opening=${opening}${txLines}${download ? fn : ''}`;
     }
@@ -285,7 +277,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
     };
 
     $('btnCodaGetBad').onclick = async () => {
-        const url = '/coda?tx=' + encodeURIComponent('CREDITT:2025-09-03:125.00:BE12 3456 7890 1234:CLIENT X:Payment:INV-1');
+        const url = '/api/coda/generate?tx=' + encodeURIComponent('CREDITT:2025-09-03:125.00:BE12 3456 7890 1234:CLIENT X:Payment:INV-1');
         const res = await fetch(url, {headers: {'Accept': 'application/json'}});
         $('statusCodaGet').textContent = res.status + ' ' + res.statusText;
         $('statusCodaGet').className = 'status ' + (res.ok ? 'ok' : 'err');
@@ -298,7 +290,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
 
     $('btnJsonInline').onclick = async () => {
         const body = $('jsonBody').value;
-        const res = await fetch('/coda/json', {
+        const res = await fetch('/api/coda/json', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Accept': 'text/plain'},
             body
@@ -309,7 +301,7 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
     $('btnJsonDownload').onclick = async () => {
         const body = $('jsonBody').value;
         const fname = $('filename').value ? ('?filename=' + encodeURIComponent($('filename').value)) : '';
-        const res = await fetch('/coda/json/download' + fname, {
+        const res = await fetch('/api/coda/json/download' + fname, {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'Accept': 'text/plain'},
             body
@@ -326,14 +318,6 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
         $('outJson').textContent = 'Downloaded ' + a.download + ' (' + res.status + ' ' + res.statusText + ')';
     };
 
-    $('btnHealth').onclick = async () => {
-        const res = await fetch('/actuator/health');
-        $('outActuator').textContent = await res.text();
-    };
-    $('btnInfo').onclick = async () => {
-        const res = await fetch('/actuator/info');
-        $('outActuator').textContent = await res.text();
-    };
 </script>
 </body>
 </html>

@@ -13,9 +13,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/coda?bankName=BELFIUS&account=BE68%205390%200754%207034&currency=EUR&opening=1200.00",
+              "raw": "{{baseUrl}}/api/coda/generate?bankName=BELFIUS&account=BE68%205390%200754%207034&currency=EUR&opening=1200.00",
               "host": ["{{baseUrl}}"],
-              "path": ["coda"],
+              "path": ["api", "coda", "generate"],
               "query": [
                 { "key": "bankName", "value": "BELFIUS" },
                 { "key": "account", "value": "BE68 5390 0754 7034" },
@@ -47,7 +47,7 @@
               "mode": "raw",
               "raw": "{\n  \"bankName\": \"BELFIUS\",\n  \"account\": \"BE68 5390 0754 7034\",\n  \"currency\": \"EUR\",\n  \"date\": \"2025-01-15\",\n  \"opening\": 1200.00\n}"
             },
-            "url": "{{baseUrl}}/coda/json"
+            "url": "{{baseUrl}}/api/coda/json"
           },
           "event": [
             {

@@ -1,10 +1,11 @@
-package com.example.coda.web;
+package com.example.coda.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.coda.model.CodaRequest;
+import com.example.coda.model.CodaRequest.Transaction;
 import com.example.coda.model.TransactionType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,7 +49,7 @@ class CodaControllerTest
             .currency("EUR")
             .date(LocalDate.of(2025, 9, 3))
             .opening(new BigDecimal("1200.00"))
-            .transactions(List.of(CodaRequest.Tx.builder()
+            .transactions(List.of(Transaction.builder()
                   .bookingDate(LocalDate.of(2025, 9, 3))
                   .type(TransactionType.CREDIT)
                   .amount(new BigDecimal("125.00"))

@@ -1,4 +1,4 @@
-package com.example.coda.web;
+package com.example.coda.controller;
 
 import com.example.coda.model.BankTransaction;
 import com.example.coda.model.CodaRequest;
@@ -18,15 +18,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/coda")
 public class CodaController
 {
    private final CodaGenerator generator = new CodaGenerator();
 
-   @GetMapping(value = "/coda", produces = MediaType.TEXT_PLAIN_VALUE)
+   @GetMapping(value = "/generate", produces = MediaType.TEXT_PLAIN_VALUE)
    public ResponseEntity<String> getCoda(
          @RequestParam(defaultValue = "BELFIUS") String bankName,
          @RequestParam(defaultValue = "BE68 5390 0754 7034") String account,
@@ -38,7 +40,7 @@ public class CodaController
       return buildResponse(bankName, account, currency, date, opening, tx, false, null);
    }
 
-   @GetMapping(value = "/coda/download", produces = MediaType.TEXT_PLAIN_VALUE)
+   @GetMapping(value = "/download", produces = MediaType.TEXT_PLAIN_VALUE)
    public ResponseEntity<String> downloadCoda(
          @RequestParam(defaultValue = "BELFIUS") String bankName,
          @RequestParam(defaultValue = "BE68 5390 0754 7034") String account,
@@ -51,14 +53,14 @@ public class CodaController
       return buildResponse(bankName, account, currency, date, opening, tx, true, filename);
    }
 
-   @PostMapping(value = "/coda/json", consumes = MediaType.APPLICATION_JSON_VALUE,
+   @PostMapping(value = "/json", consumes = MediaType.APPLICATION_JSON_VALUE,
          produces = MediaType.TEXT_PLAIN_VALUE)
    public ResponseEntity<String> postCoda(@Valid @RequestBody CodaRequest req)
    {
       return buildResponse(req, false, null);
    }
 
-   @PostMapping(value = "/coda/json/download", consumes = MediaType.APPLICATION_JSON_VALUE,
+   @PostMapping(value = "/json/download", consumes = MediaType.APPLICATION_JSON_VALUE,
          produces = MediaType.TEXT_PLAIN_VALUE)
    public ResponseEntity<String> postCodaDownload(@Valid @RequestBody CodaRequest req,
          @RequestParam(required = false) String filename)
@@ -68,19 +70,19 @@ public class CodaController
 
    private ResponseEntity<String> buildResponse(CodaRequest req, boolean attachment, String filename)
    {
-      List<BankTransaction> txs = req.getTransactions().stream()
+      List<BankTransaction> txs = req.transactions().stream()
             .map(tx -> BankTransaction.builder()
-                  .bookingDate(tx.getBookingDate())
-                  .type(tx.getType())
-                  .amount(tx.getAmount())
-                  .counterpartyAccount(tx.getCounterpartyAccount())
-                  .counterpartyName(tx.getCounterpartyName())
-                  .description(tx.getDescription())
-                  .reference(tx.getReference())
+                  .bookingDate(tx.bookingDate())
+                  .type(tx.type())
+                  .amount(tx.amount())
+                  .counterpartyAccount(tx.counterpartyAccount())
+                  .counterpartyName(tx.counterpartyName())
+                  .description(tx.description())
+                  .reference(tx.reference())
                   .build())
             .collect(Collectors.toList());
 
-      return respond(req.getBankName(), req.getAccount(), req.getCurrency(), req.getDate(), req.getOpening(), txs,
+      return respond(req.bankName(), req.account(), req.currency(), req.date(), req.opening(), txs,
             attachment, filename);
    }
 

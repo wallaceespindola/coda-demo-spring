@@ -1,2 +1,4 @@
 package com.example.coda.model;
-public enum TransactionType { CREDIT, DEBIT }
+
+public enum TransactionType
+{CREDIT, DEBIT}
