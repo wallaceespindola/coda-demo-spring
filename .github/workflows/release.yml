@@ -1,0 +1,40 @@
+name: Release (Tag -> GitHub Release)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Build
+        run: |
+          mvn -B -q -DskipTests package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coda-demo-jar
+          path: target/coda-demo-*.jar
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/coda-demo-*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

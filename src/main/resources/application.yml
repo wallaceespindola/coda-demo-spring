@@ -1,0 +1,26 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: coda-demo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# springdoc OpenAPI configuration
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha
+    displayOperationId: true
+    tryItOutEnabled: true

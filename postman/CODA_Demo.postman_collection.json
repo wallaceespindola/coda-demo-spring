@@ -1,0 +1,97 @@
+{
+  "info": {
+    "name": "CODA Demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection for generating CODA statements via the demo API. Includes GET and POST generation, actuator health/info, and OpenAPI docs. Uses {{baseUrl}} variable."
+  },
+  "item": [
+    {
+      "name": "API",
+      "item": [
+        {
+          "name": "Generate CODA (GET)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/coda?bankName=BELFIUS&account=BE68%205390%200754%207034&currency=EUR&opening=1200.00",
+              "host": ["{{baseUrl}}"],
+              "path": ["coda"],
+              "query": [
+                { "key": "bankName", "value": "BELFIUS" },
+                { "key": "account", "value": "BE68 5390 0754 7034" },
+                { "key": "currency", "value": "EUR" },
+                { "key": "opening", "value": "1200.00" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is text/plain', () => pm.expect(pm.response.headers.get('Content-Type')).to.match(/text\\/plain/i));",
+                  "pm.test('Body is not empty', () => pm.expect(pm.response.text()).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate CODA (POST)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bankName\": \"BELFIUS\",\n  \"account\": \"BE68 5390 0754 7034\",\n  \"currency\": \"EUR\",\n  \"date\": \"2025-01-15\",\n  \"opening\": 1200.00\n}"
+            },
+            "url": "{{baseUrl}}/coda/json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type is text/plain', () => pm.expect(pm.response.headers.get('Content-Type')).to.match(/text\\/plain/i));",
+                  "pm.test('Body is not empty', () => pm.expect(pm.response.text()).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Actuator & Docs",
+      "item": [
+        {
+          "name": "Health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Status present', () => { try { const j = pm.response.json(); pm.expect(j).to.have.property('status'); } catch(e) {} });"
+          ] } } ]
+        },
+        {
+          "name": "Info",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actuator/info" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ]
+        },
+        {
+          "name": "Swagger UI",
+          "request": { "method": "GET", "url": "{{baseUrl}}/swagger-ui" }
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": { "method": "GET", "url": "{{baseUrl}}/v3/api-docs" },
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200 OK', () => pm.response.to.have.status(200));" ] } } ]
+        }
+      ]
+    }
+  ],
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:8080" }]
+}
