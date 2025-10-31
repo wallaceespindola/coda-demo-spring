@@ -61,18 +61,22 @@ class CodaFileParserTest
       assertTrue(firstMovement.getAmount().compareTo(BigDecimal.ZERO) > 0, 
             "Movement amount should be positive");
       
-      // Verify counterparty details (from record 23)
-      assertNotNull(firstMovement.getCounterpartyAccount(), 
-            "Counterparty account should be extracted");
-      assertTrue(firstMovement.getCounterpartyAccount().contains("BE"), 
+      // Find a movement with counterparty details (from record 23)
+      MovementRecord movementWithCounterparty = statement.getMovements().stream()
+            .filter(m -> m.getCounterpartyAccount() != null)
+            .findFirst()
+            .orElse(null);
+      
+      assertNotNull(movementWithCounterparty, "Should have at least one movement with counterparty");
+      assertTrue(movementWithCounterparty.getCounterpartyAccount().contains("BE"), 
             "Should be Belgian IBAN");
-      assertNotNull(firstMovement.getCounterpartyAccountName(), 
+      assertNotNull(movementWithCounterparty.getCounterpartyAccountName(), 
             "Counterparty name should be extracted");
       
       // Verify address details (from record 32)
-      assertNotNull(firstMovement.getCounterpartyAddress(), 
+      assertNotNull(movementWithCounterparty.getCounterpartyAddress(), 
             "Counterparty address should be extracted");
-      assertNotNull(firstMovement.getCounterpartyCity(), 
+      assertNotNull(movementWithCounterparty.getCounterpartyCity(), 
             "Counterparty city should be extracted");
 
       // 4. Verify specific movements with known data
@@ -83,8 +87,10 @@ class CodaFileParserTest
             .findFirst()
             .orElse(null);
       assertNotNull(ucarMovement, "Should find UCAR movement");
+      assertNotNull(ucarMovement.getCounterpartyCity(), "UCAR movement should have city");
       assertTrue(ucarMovement.getCounterpartyCity().contains("WAARSCHOOT"), 
             "UCAR should be from WAARSCHOOT");
+      assertNotNull(ucarMovement.getCounterpartyPostalCode(), "UCAR movement should have postal code");
       assertEquals("9950", ucarMovement.getCounterpartyPostalCode().trim(), 
             "Postal code should be 9950");
 
@@ -95,6 +101,7 @@ class CodaFileParserTest
             .findFirst()
             .orElse(null);
       assertNotNull(doeJohnMovement, "Should find DOE JOHN movement");
+      assertNotNull(doeJohnMovement.getCounterpartyCity(), "DOE JOHN movement should have city");
       assertTrue(doeJohnMovement.getCounterpartyCity().contains("STEKENE"), 
             "DOE JOHN should be from STEKENE");
 

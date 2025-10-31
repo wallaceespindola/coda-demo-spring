@@ -84,7 +84,7 @@ class CodaParserWriterTest
 
       // Find a movement with counterparty details
       MovementRecord movement = statement.getMovements().stream()
-            .filter(m -> m.getCounterpartyName() != null)
+            .filter(m -> m.getCounterpartyAccountName() != null)
             .findFirst()
             .orElse(null);
 
