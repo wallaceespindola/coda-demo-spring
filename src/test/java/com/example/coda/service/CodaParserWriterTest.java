@@ -18,8 +18,8 @@ class CodaParserWriterTest
    @Test
    void parseRealCodaFile() throws IOException
    {
-      // Read the Pai.txt file
-      String codaContent = new String(Files.readAllBytes(Paths.get("Pai.txt")));
+      // Read the coda_test.txt file
+      String codaContent = new String(Files.readAllBytes(Paths.get("src/test/java/resources/coda_test.txt")));
 
       // Parse it
       CodaStatement statement = parser.parse(codaContent);
@@ -60,7 +60,7 @@ class CodaParserWriterTest
    void parseAndWriteBackProducesSimilarOutput() throws IOException
    {
       // Read original file
-      String originalContent = new String(Files.readAllBytes(Paths.get("Pai.txt")));
+      String originalContent = new String(Files.readAllBytes(Paths.get("src/test/java/resources/coda_test.txt")));
 
       // Parse it
       CodaStatement statement = parser.parse(originalContent);
@@ -79,7 +79,7 @@ class CodaParserWriterTest
    @Test
    void parseExtractsMovementDetails() throws IOException
    {
-      String codaContent = new String(Files.readAllBytes(Paths.get("Pai.txt")));
+      String codaContent = new String(Files.readAllBytes(Paths.get("src/test/java/resources/coda_test.txt")));
       CodaStatement statement = parser.parse(codaContent);
 
       // Find a movement with counterparty details
@@ -95,7 +95,7 @@ class CodaParserWriterTest
    @Test
    void parseExtractsBalances() throws IOException
    {
-      String codaContent = new String(Files.readAllBytes(Paths.get("Pai.txt")));
+      String codaContent = new String(Files.readAllBytes(Paths.get("src/test/java/resources/coda_test.txt")));
       CodaStatement statement = parser.parse(codaContent);
 
       assertNotNull(statement.getOldBalance());
