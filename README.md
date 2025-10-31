@@ -24,7 +24,7 @@ Generate and preview/download a **Belgian CODA-style** bank statement file via R
 - Static test dashboard at `/`
 - Unit tests
 - Docker + Compose
-- Postman collectio
+- Postman collection
 
 ## Run
 
