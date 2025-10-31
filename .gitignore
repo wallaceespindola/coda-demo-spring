@@ -73,3 +73,6 @@ $RECYCLE.BIN/
 
 # AI agents
 AGENTS.md
+
+# PowerShell test scripts
+*.ps1
