@@ -147,6 +147,18 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
+
+        .section {
+            border: 1px dashed #ccc;
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 8px;
+        }
+
+        .section h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -157,6 +169,7 @@
         <a href="/v3/api-docs" target="_blank">OpenAPI JSON</a>
         <a href="/actuator/health" target="_blank">/actuator/health</a>
         <a href="/actuator/info" target="_blank">/actuator/info</a>
+        <a href="/full-coda-statement.html" target="_blank">Full CODA Statement Entry</a>
     </div>
 </header>
 
@@ -243,6 +256,17 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
         </div>
     </section>
 
+    <section>
+        <h2>Detailed CODA Record Entry</h2>
+        <div id="codaRecords"></div>
+        <button id="addRecord">Add Record</button>
+        <div class="btns">
+            <button id="generateCoda">Generate CODA Text</button>
+            <a class="btn" id="downloadCoda" href="#" download style="display:none;">Download CODA File</a>
+        </div>
+        <pre id="codaPreview"></pre>
+    </section>
+
 </main>
 
 <script>
@@ -318,6 +342,145 @@ DEBIT:2025-09-04:50.00:BE98 7654 3210 9876:SUPPLIER Y:SEPA transfer:INV-2025-004
         $('outJson').textContent = 'Downloaded ' + a.download + ' (' + res.status + ' ' + res.statusText + ')';
     };
 
+    // CODA record template
+    function createRecordForm(idx) {
+        return `<div class="section" id="record-${idx}">
+            <h3>Record #${idx + 1}</h3>
+            <div class="row">
+                <div><label>Beneficiary Name</label><input class="beneficiaryName"/></div>
+                <div><label>IBAN</label><input class="iban"/></div>
+                <div><label>Bank BIC</label><input class="bic"/></div>
+            </div>
+            <div class="row">
+                <div><label>Address</label><input class="address"/></div>
+                <div><label>Postal Code</label><input class="postalCode"/></div>
+                <div><label>City</label><input class="city"/></div>
+            </div>
+            <div class="row">
+                <div><label>Amount</label><input class="amount" type="number" step="0.01"/></div>
+                <div><label>Booking Date</label><input class="bookingDate" type="date"/></div>
+                <div><label>Reference</label><input class="reference"/></div>
+            </div>
+            <div class="row">
+                <div><label>Description</label><input class="description"/></div>
+                <div><label>Type</label><select class="type"><option value="CREDIT">CREDIT</option><option value="DEBIT">DEBIT</option></select></div>
+                <div><button class="removeRecord" data-idx="${idx}">Remove</button></div>
+            </div>
+        </div>`;
+    }
+    let recordCount = 0;
+    const sampleRecords = [
+        {
+            beneficiaryName: "AXA BELGIUM SA",
+            iban: "BE84390060159859",
+            bic: "BBRUBEBB",
+            address: "UCAR",
+            postalCode: "9950",
+            city: "WAARSCHOOT",
+            amount: "2441.20",
+            bookingDate: "2025-11-03",
+            reference: "03032502410",
+            description: "REGROUPEMENT DE 6 VCS",
+            type: "CREDIT"
+        },
+        {
+            beneficiaryName: "DOE JOHN",
+            iban: "BE03737623180684",
+            bic: "KREDBEBB",
+            address: "BOSDORP 118",
+            postalCode: "9190",
+            city: "STEKENE",
+            amount: "724.80",
+            bookingDate: "2025-11-03",
+            reference: "03032502401",
+            description: "SEPA transfer",
+            type: "DEBIT"
+        },
+        {
+            beneficiaryName: "PAGLIARIC",
+            iban: "BE63340091652308",
+            bic: "BBRUBEBB",
+            address: "RUE DU CHENEUX 7",
+            postalCode: "4540",
+            city: "AMAY",
+            amount: "247.90",
+            bookingDate: "2025-11-03",
+            reference: "03032502411",
+            description: "Payment received",
+            type: "CREDIT"
+        }
+    ];
+    function renderRecords(prefill = false) {
+        const container = document.getElementById('codaRecords');
+        container.innerHTML = '';
+        for (let i = 0; i < recordCount; i++) {
+            container.innerHTML += createRecordForm(i);
+        }
+        // Prefill sample data if requested
+        if (prefill) {
+            Array.from(document.querySelectorAll('#codaRecords .section')).forEach((section, idx) => {
+                if (sampleRecords[idx]) {
+                    section.querySelector('.beneficiaryName').value = sampleRecords[idx].beneficiaryName;
+                    section.querySelector('.iban').value = sampleRecords[idx].iban;
+                    section.querySelector('.bic').value = sampleRecords[idx].bic;
+                    section.querySelector('.address').value = sampleRecords[idx].address;
+                    section.querySelector('.postalCode').value = sampleRecords[idx].postalCode;
+                    section.querySelector('.city').value = sampleRecords[idx].city;
+                    section.querySelector('.amount').value = sampleRecords[idx].amount;
+                    section.querySelector('.bookingDate').value = sampleRecords[idx].bookingDate;
+                    section.querySelector('.reference').value = sampleRecords[idx].reference;
+                    section.querySelector('.description').value = sampleRecords[idx].description;
+                    section.querySelector('.type').value = sampleRecords[idx].type;
+                }
+            });
+        }
+        // Add remove listeners
+        Array.from(document.getElementsByClassName('removeRecord')).forEach(btn => {
+            btn.onclick = function() {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                recordCount--;
+                renderRecords();
+            };
+        });
+    }
+    document.getElementById('addRecord').onclick = function() {
+        recordCount++;
+        renderRecords();
+    };
+    // Initial records with prefill
+    recordCount = sampleRecords.length;
+    renderRecords(true);
+    // Generate CODA text
+    document.getElementById('generateCoda').onclick = function() {
+        const records = Array.from(document.querySelectorAll('#codaRecords .section')).map(section => {
+            return {
+                beneficiaryName: section.querySelector('.beneficiaryName').value,
+                iban: section.querySelector('.iban').value,
+                bic: section.querySelector('.bic').value,
+                address: section.querySelector('.address').value,
+                postalCode: section.querySelector('.postalCode').value,
+                city: section.querySelector('.city').value,
+                amount: section.querySelector('.amount').value,
+                bookingDate: section.querySelector('.bookingDate').value,
+                reference: section.querySelector('.reference').value,
+                description: section.querySelector('.description').value,
+                type: section.querySelector('.type').value
+            };
+        });
+        // Build CODA text (simple demo, should be improved for real format)
+        let codaText = '';
+        records.forEach((rec, i) => {
+            codaText += `${rec.type}:${rec.bookingDate}:${rec.amount}:${rec.iban}:${rec.beneficiaryName}:${rec.description}:${rec.reference}:${rec.bic}:${rec.address}:${rec.postalCode}:${rec.city}\n`;
+        });
+        document.getElementById('codaPreview').textContent = codaText;
+        // Enable download
+        const blob = new Blob([codaText], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const dl = document.getElementById('downloadCoda');
+        dl.href = url;
+        dl.download = 'coda_generated.txt';
+        dl.style.display = '';
+    };
 </script>
 </body>
 </html>

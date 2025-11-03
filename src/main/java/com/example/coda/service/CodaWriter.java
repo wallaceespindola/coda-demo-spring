@@ -175,6 +175,7 @@ public class CodaWriter
       line.append(formatString(movement.getTransactionCategory(), 1));
       line.append(formatString(movement.getPurposeCategory(), 1));
       line.append(formatString("", 30)); // Reserved
+      line.append("1 0"); // CODA trailing field for record 22
       return padRight(line.toString(), LINE_LENGTH);
    }
 
@@ -190,6 +191,7 @@ public class CodaWriter
       line.append(formatString(movement.getCounterpartyAccount(), 37));
       line.append(formatString(movement.getCounterpartyAccountName(), 35));
       line.append(formatString("", 46)); // Reserved
+      line.append("0 1"); // CODA trailing field for record 23
       return padRight(line.toString(), LINE_LENGTH);
    }
 
@@ -205,6 +207,7 @@ public class CodaWriter
       line.append(formatString("", 2)); // Reserved
       line.append(formatString(movement.getStructuredCommunication(), 80));
       line.append(formatString("", 28)); // Reserved
+      line.append("1 0"); // CODA trailing field for record 31
       return padRight(line.toString(), LINE_LENGTH);
    }
 
@@ -221,6 +224,7 @@ public class CodaWriter
       line.append(formatString(movement.getCounterpartyPostalCode(), 7));
       line.append(formatString(movement.getCounterpartyCity(), 32));
       line.append(formatString("", 44)); // Reserved
+      line.append("0 0"); // CODA trailing field for record 32
       return padRight(line.toString(), LINE_LENGTH);
    }
 

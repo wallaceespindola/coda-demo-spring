@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Full CODA Statement Entry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #fff; color: #1b1f23; }
+        main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+        section { border: 1px solid #eee; border-radius: 12px; padding: 16px; margin: 16px 0; }
+        h1 { font-size: 22px; margin-bottom: 18px; }
+        h2 { font-size: 16px; margin: 0 0 12px 0; }
+        label { font-size: 12px; color: #6a737d; display: block; margin-top: 8px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: 14px; }
+        .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        button { background: #2563eb; color: #fff; border: none; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; }
+        pre { background: #0b1020; color: #e5e7eb; padding: 12px; border-radius: 10px; overflow: auto; max-height: 300px; }
+        .section { border: 1px dashed #ccc; padding: 12px; margin: 12px 0; border-radius: 8px; }
+        .section h3 { margin: 0 0 8px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Full CODA Statement Entry</h1>
+    <section>
+        <form id="codaStatementForm">
+            <div class="row">
+                <div><label>Bank Name</label><input name="bankName" value="BELFIUS"/></div>
+                <div><label>Account</label><input name="account" value="BE68 5390 0754 7034"/></div>
+                <div><label>Currency</label><input name="currency" value="EUR"/></div>
+            </div>
+            <div class="row">
+                <div><label>Statement Date</label><input name="date" type="date" value="2025-11-03"/></div>
+                <div><label>Opening Balance</label><input name="opening" type="number" step="0.01" value="1200.00"/></div>
+                <div><label>Statement Number</label><input name="statementNumber" value="3032530005"/></div>
+            </div>
+            <div class="row">
+                <div><label>Company Name</label><input name="companyName" value="AXA BELGIUM SA"/></div>
+                <div><label>Company Account</label><input name="companyAccount" value="04308988"/></div>
+                <div><label>Company BIC</label><input name="companyBic" value="BBRUBEBB"/></div>
+            </div>
+            <div><label>Transactions</label></div>
+            <div id="statementTransactions"></div>
+            <button type="button" id="addStatementTx">Add Transaction</button>
+        </form>
+        <div class="btns">
+            <button id="previewStatement">Preview CODA</button>
+            <button id="openStatementTab">Open in New Tab</button>
+            <button id="downloadStatement">Download CODA File</button>
+        </div>
+        <pre id="statementPreview"></pre>
+    </section>
+</main>
+<script>
+    function createStatementTxForm(idx, tx) {
+        tx = tx || {};
+        return `<div class=\"section\" id=\"statementTx-${idx}\">\n            <h3>Transaction #${idx + 1}</h3>\n            <div class=\"row\">\n                <div><label>Type</label><select name=\"type\"><option value=\"CREDIT\"${tx.type==="CREDIT"?" selected":""}>CREDIT</option><option value=\"DEBIT\"${tx.type==="DEBIT"?" selected":""}>DEBIT</option></select></div>\n                <div><label>Booking Date</label><input name=\"bookingDate\" type=\"date\" value=\"${tx.bookingDate||'2025-11-03'}\"/></div>\n                <div><label>Amount</label><input name=\"amount\" type=\"number\" step=\"0.01\" value=\"${tx.amount||''}\"/></div>\n            </div>\n            <div class=\"row\">\n                <div><label>Counterparty Name</label><input name=\"counterpartyName\" value=\"${tx.counterpartyName||''}\"/></div>\n                <div><label>Counterparty Account</label><input name=\"counterpartyAccount\" value=\"${tx.counterpartyAccount||''}\"/></div>\n                <div><label>Counterparty BIC</label><input name=\"counterpartyBic\" value=\"${tx.counterpartyBic||''}\"/></div>\n            </div>\n            <div class=\"row\">\n                <div><label>Address</label><input name=\"address\" value=\"${tx.address||''}\"/></div>\n                <div><label>Postal Code</label><input name=\"postalCode\" value=\"${tx.postalCode||''}\"/></div>\n                <div><label>City</label><input name=\"city\" value=\"${tx.city||''}\"/></div>\n            </div>\n            <div class=\"row\">\n                <div><label>Description</label><input name=\"description\" value=\"${tx.description||''}\"/></div>\n                <div><label>Reference</label><input name=\"reference\" value=\"${tx.reference||''}\"/></div>\n                <div><button type=\"button\" class=\"removeStatementTx\" data-idx=\"${idx}\">Remove</button></div>\n            </div>\n        </div>`;
+    }
+    let statementTxs = [
+        {
+            type: "CREDIT",
+            bookingDate: "2025-11-03",
+            amount: "2441.20",
+            counterpartyName: "AXA BELGIUM SA",
+            counterpartyAccount: "BE84390060159859",
+            counterpartyBic: "BBRUBEBB",
+            address: "UCAR",
+            postalCode: "9950",
+            city: "WAARSCHOOT",
+            description: "REGROUPEMENT DE 6 VCS",
+            reference: "03032502410"
+        },
+        {
+            type: "DEBIT",
+            bookingDate: "2025-11-03",
+            amount: "724.80",
+            counterpartyName: "DOE JOHN",
+            counterpartyAccount: "BE03737623180684",
+            counterpartyBic: "KREDBEBB",
+            address: "BOSDORP 118",
+            postalCode: "9190",
+            city: "STEKENE",
+            description: "SEPA transfer",
+            reference: "03032502401"
+        },
+        {
+            type: "CREDIT",
+            bookingDate: "2025-11-03",
+            amount: "247.90",
+            counterpartyName: "PAGLIARIC",
+            counterpartyAccount: "BE63340091652308",
+            counterpartyBic: "BBRUBEBB",
+            address: "RUE DU CHENEUX 7",
+            postalCode: "4540",
+            city: "AMAY",
+            description: "Payment received",
+            reference: "03032502411"
+        }
+    ];
+    function renderStatementTxs() {
+        const container = document.getElementById('statementTransactions');
+        container.innerHTML = '';
+        statementTxs.forEach((tx, idx) => {
+            container.innerHTML += createStatementTxForm(idx, tx);
+        });
+        Array.from(document.getElementsByClassName('removeStatementTx')).forEach(btn => {
+            btn.onclick = function() {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                statementTxs.splice(idx, 1);
+                renderStatementTxs();
+            };
+        });
+    }
+    document.getElementById('addStatementTx').onclick = function() {
+        let last = statementTxs.length > 0 ? statementTxs[statementTxs.length - 1] : null;
+        statementTxs.push({
+            type: last ? last.type : "CREDIT",
+            bookingDate: last ? last.bookingDate : "2025-11-03",
+            amount: last ? last.amount : "100.00",
+            counterpartyName: last ? last.counterpartyName : "CLIENT X",
+            counterpartyAccount: last ? last.counterpartyAccount : "BE12 3456 7890 1234",
+            counterpartyBic: last ? last.counterpartyBic : "BBRUBEBB",
+            address: last ? last.address : "RUE DU CHENEUX 7",
+            postalCode: last ? last.postalCode : "4540",
+            city: last ? last.city : "AMAY",
+            description: last ? last.description : "Payment received",
+            reference: last ? last.reference : "INV-2025-0456"
+        });
+        renderStatementTxs();
+    };
+    renderStatementTxs();
+    function getStatementFormData() {
+        const form = document.getElementById('codaStatementForm');
+        const data = {};
+        Array.from(form.elements).forEach(el => {
+            if (el.name && !el.closest('.section')) {
+                data[el.name] = el.value;
+            }
+        });
+        data.transactions = Array.from(document.querySelectorAll('#statementTransactions .section')).map(section => {
+            const tx = {};
+            Array.from(section.querySelectorAll('input,select')).forEach(el => {
+                if (el.name) tx[el.name] = el.value;
+            });
+            return tx;
+        });
+        return data;
+    }
+    // Remove buildCoda128 and use backend for file layout
+    async function fetchCodaStatement(action) {
+        const body = JSON.stringify(getStatementFormData());
+        let url = '/api/coda/json';
+        if (action === 'download') url += '/download';
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Accept': 'text/plain'},
+            body
+        });
+        return res;
+    }
+    document.getElementById('previewStatement').onclick = async function() {
+        const res = await fetchCodaStatement('preview');
+        document.getElementById('statementPreview').textContent = await res.text();
+    };
+    document.getElementById('openStatementTab').onclick = async function() {
+        const res = await fetchCodaStatement('preview');
+        const text = await res.text();
+        const win = window.open('', '_blank');
+        win.document.write('<pre>' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>');
+        win.document.close();
+    };
+    document.getElementById('downloadStatement').onclick = async function() {
+        const res = await fetchCodaStatement('download');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'coda_statement.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    };
+</script>
+</body>
+</html>
