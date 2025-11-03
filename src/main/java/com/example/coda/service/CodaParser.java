@@ -1,6 +1,11 @@
 package com.example.coda.service;
 
-import com.example.coda.model.*;
+import com.example.coda.model.CodaStatement;
+import com.example.coda.model.HeaderRecord;
+import com.example.coda.model.MovementRecord;
+import com.example.coda.model.NewBalanceRecord;
+import com.example.coda.model.OldBalanceRecord;
+import com.example.coda.model.TrailerRecord;
 import com.example.coda.util.IbanUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,17 +48,17 @@ public class CodaParser
 
             switch (recordType)
             {
-               case "0":
+               case "0": // Header Record
                   builder.header(parseHeaderRecord(line));
                   break;
 
-               case "1":
+               case "1": // Old Balance Record
                   builder.oldBalance(parseOldBalanceRecord(line));
                   break;
 
-               case "2":
+               case "2": // Movement Records
                   String subType = line.substring(1, 2);
-                  if ("1".equals(subType))
+                  if ("1".equals(subType)) // Movement Main Data
                   {
                      // Save previous movement if exists
                      if (currentMovement != null)
@@ -63,32 +68,32 @@ public class CodaParser
                      // Start new movement
                      currentMovement = parseMovementRecord21(line);
                   }
-                  else if ("2".equals(subType) && currentMovement != null)
+                  else if ("2".equals(subType) && currentMovement != null) // Communication
                   {
                      parseMovementRecord22(line, currentMovement);
                   }
-                  else if ("3".equals(subType) && currentMovement != null)
+                  else if ("3".equals(subType) && currentMovement != null) // Counterparty Account
                   {
                      parseMovementRecord23(line, currentMovement);
                   }
                   break;
 
-               case "3":
+               case "3": // Movement Detail Records
                   if (currentMovement != null)
                   {
                      String subType3 = line.substring(1, 2);
-                     if ("1".equals(subType3))
+                     if ("1".equals(subType3)) // Structured Communication
                      {
                         parseMovementRecord31(line, currentMovement);
                      }
-                     else if ("2".equals(subType3))
+                     else if ("2".equals(subType3)) // Counterparty Address
                      {
                         parseMovementRecord32(line, currentMovement);
                      }
                   }
                   break;
 
-               case "8":
+               case "8": // New Balance Record
                   // Save last movement before new balance
                   if (currentMovement != null)
                   {
@@ -98,7 +103,7 @@ public class CodaParser
                   builder.newBalance(parseNewBalanceRecord(line));
                   break;
 
-               case "9":
+               case "9": // Trailer Record
                   builder.trailer(parseTrailerRecord(line));
                   break;
             }
@@ -117,19 +122,19 @@ public class CodaParser
    {
       String accountNumber = extract(line, 61, 76).trim();
       String completedAccount = IbanUtil.extractAndCompleteIban(accountNumber);
-      
+
       return HeaderRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))           // Pos 2-4
-            .versionCode(extract(line, 4, 5))               // Pos 5
-            .creationDate(parseDate6(line, 5, 11))          // Pos 6-11
-            .bankIdentificationNumber(extract(line, 11, 14)) // Pos 12-14
-            .applicationCode(extract(line, 14, 16))         // Pos 15-16
-            .recipientName(extract(line, 23, 49).trim())    // Pos 24-49
-            .bic(extract(line, 49, 61).trim())              // Pos 50-61
-            .accountNumber(completedAccount)                 // Pos 62-76
+            .sequenceNumber(parseInt(line, 1, 4))             // Pos 2-4
+            .versionCode(extract(line, 4, 5))                 // Pos 5
+            .creationDate(parseDate6(line, 5, 11))            // Pos 6-11
+            .bankIdentificationNumber(extract(line, 11, 14))  // Pos 12-14
+            .applicationCode(extract(line, 14, 16))           // Pos 15-16
+            .recipientName(extract(line, 23, 49).trim())      // Pos 24-49
+            .bic(extract(line, 49, 61).trim())                // Pos 50-61
+            .accountNumber(completedAccount)                             // Pos 62-76
             .accountDescription(extract(line, 76, 90).trim()) // Pos 77-90
-            .oldBalanceSign(extract(line, 90, 91))          // Pos 91
-            .duplicateCode(extract(line, 127, 128))         // Pos 128
+            .oldBalanceSign(extract(line, 90, 91))            // Pos 91
+            .duplicateCode(extract(line, 127, 128))           // Pos 128
             .build();
    }
 
@@ -141,18 +146,18 @@ public class CodaParser
    {
       String accountNumber = extract(line, 4, 16).trim();
       String completedAccount = IbanUtil.extractAndCompleteIban(accountNumber);
-      
+
       return OldBalanceRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))            // Pos 2-4
-            .accountNumber(completedAccount)                  // Pos 5-16
-            .accountNumberType(extract(line, 16, 17))        // Pos 17
-            .currencyCode(extract(line, 17, 20))             // Pos 18-20
-            .countryCode(extract(line, 20, 22))              // Pos 21-22
-            .oldBalance(parseAmount(line, 24, 39))           // Pos 25-39
-            .balanceDate(parseDate6(line, 39, 45))           // Pos 40-45
-            .accountHolderName(extract(line, 45, 71).trim()) // Pos 46-71
+            .sequenceNumber(parseInt(line, 1, 4))              // Pos 2-4
+            .accountNumber(completedAccount)                              // Pos 5-16
+            .accountNumberType(extract(line, 16, 17))          // Pos 17
+            .currencyCode(extract(line, 17, 20))               // Pos 18-20
+            .countryCode(extract(line, 20, 22))                // Pos 21-22
+            .oldBalance(parseAmount(line, 24, 39))             // Pos 25-39
+            .balanceDate(parseDate6(line, 39, 45))             // Pos 40-45
+            .accountHolderName(extract(line, 45, 71).trim())   // Pos 46-71
             .accountDescription(extract(line, 71, 105).trim()) // Pos 72-105
-            .sequenceNumberDetail(parseInt(line, 105, 108))  // Pos 106-108
+            .sequenceNumberDetail(parseInt(line, 105, 108))    // Pos 106-108
             .build();
    }
 
@@ -163,17 +168,17 @@ public class CodaParser
    private MovementRecord.MovementRecordBuilder parseMovementRecord21(String line)
    {
       return MovementRecord.builder()
-            .sequenceNumber(parseInt(line, 2, 6))              // Pos 3-6
-            .accountNumber(extract(line, 6, 18).trim())        // Pos 7-18
-            .transactionCode(extract(line, 18, 26))            // Pos 19-26
-            .amount(parseAmount(line, 26, 41))                 // Pos 27-41
-            .valueDate(parseDate6(line, 41, 47))               // Pos 42-47
-            .transactionReference(extract(line, 47, 68).trim()) // Pos 48-68
+            .sequenceNumber(parseInt(line, 2, 6))                   // Pos 3-6
+            .accountNumber(extract(line, 6, 18).trim())             // Pos 7-18
+            .transactionCode(extract(line, 18, 26))                 // Pos 19-26
+            .amount(parseAmount(line, 26, 41))                      // Pos 27-41
+            .valueDate(parseDate6(line, 41, 47))                    // Pos 42-47
+            .transactionReference(extract(line, 47, 68).trim())     // Pos 48-68
             .communicationStructured(extract(line, 68, 115).trim()) // Pos 69-115
-            .transactionDate(parseDate6(line, 115, 121))       // Pos 116-121
-            .statementNumber(extract(line, 121, 124))          // Pos 122-124
-            .globalSequence(extract(line, 124, 127))           // Pos 125-127
-            .statementSequence(extract(line, 127, 128));       // Pos 128
+            .transactionDate(parseDate6(line, 115, 121))            // Pos 116-121
+            .statementNumber(extract(line, 121, 124))               // Pos 122-124
+            .globalSequence(extract(line, 124, 127))                // Pos 125-127
+            .statementSequence(extract(line, 127, 128));            // Pos 128
    }
 
    /**
@@ -183,9 +188,9 @@ public class CodaParser
    private void parseMovementRecord22(String line, MovementRecord.MovementRecordBuilder builder)
    {
       builder.counterpartyName(extract(line, 10, 63).trim())   // Pos 11-63
-            .counterpartyBic(extract(line, 63, 74).trim())      // Pos 64-74
-            .transactionCategory(extract(line, 96, 97))         // Pos 97
-            .purposeCategory(extract(line, 97, 98));            // Pos 98
+            .counterpartyBic(extract(line, 63, 74).trim())     // Pos 64-74
+            .transactionCategory(extract(line, 96, 97))        // Pos 97
+            .purposeCategory(extract(line, 97, 98));           // Pos 98
    }
 
    /**
@@ -197,9 +202,8 @@ public class CodaParser
       String account = extract(line, 10, 47).trim();           // Pos 11-47
       // Auto-complete Belgian IBAN if applicable
       String completedAccount = IbanUtil.extractAndCompleteIban(account);
-      
-      builder.counterpartyAccount(completedAccount)
-            .counterpartyAccountName(extract(line, 47, 82).trim()); // Pos 48-82
+
+      builder.counterpartyAccount(completedAccount).counterpartyAccountName(extract(line, 47, 82).trim()); // Pos 48-82
    }
 
    /**

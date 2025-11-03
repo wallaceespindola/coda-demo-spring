@@ -1,9 +1,8 @@
 package com.example.coda.model;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Complete CODA statement representation
