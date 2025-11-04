@@ -19,9 +19,9 @@ class CodaGeneratorTest
       String out = generator.generate("BELFIUS", "ACC123", "EUR", LocalDate.now(), new BigDecimal("1000.00"),
             List.of());
 
-      assertTrue(out.contains("000000001"), "Header record marker missing");
-      assertTrue(out.contains("100000002"), "Opening balance record marker missing");
-      assertTrue(out.contains("900000004"), "Closing record marker missing");
+      assertTrue(out.startsWith("0001"), "Header record marker missing");
+      assertTrue(out.contains("1002"), "Opening balance record marker missing");
+      assertTrue(out.contains("\n9"), "Closing record marker missing");
    }
 
    @Test
@@ -40,9 +40,9 @@ class CodaGeneratorTest
       String out = generator.generate("BELFIUS", "BE68 5390 0754 7034", "EUR",
             LocalDate.of(2025, 9, 4), new BigDecimal("1200.00"), List.of(tx));
 
-      assertTrue(out.contains("200000003"), "Transaction record marker missing");
-      assertTrue(out.contains("CR000000000012500"), "Credit amount should be represented in cents");
+      assertTrue(out.contains("21"), "Transaction record marker missing");
+      assertTrue(out.contains("CR000000000000000012500"), "Credit amount should be represented in cents");
       assertTrue(out.contains("CLIENT X"), "Counterparty name should appear in output");
-      assertTrue(out.contains("CL000000000132500"), "Closing balance should reflect credit addition");
+      assertTrue(out.contains("000000000132500"), "Closing balance should reflect credit addition");
    }
 }

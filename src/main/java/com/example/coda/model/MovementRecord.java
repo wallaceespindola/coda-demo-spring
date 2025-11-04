@@ -11,7 +11,7 @@ import java.util.List;
  * Can have multiple detail records (type 3)
  */
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class MovementRecord
 {
    // Record 21 - Main movement data

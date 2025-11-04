@@ -1,44 +1,68 @@
 package com.example.coda.service;
 
-import com.example.coda.model.BankTransaction;
-import com.example.coda.model.TransactionType;
+import com.example.coda.model.*;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CodaGenerator
 {
-   private static final DateTimeFormatter YYYYMMDD = DateTimeFormatter.ofPattern("yyyyMMdd");
+   private final CodaWriter writer = new CodaWriter();
 
    public String generate(String bankName, String accountNumber, String currency, LocalDate statementDate,
          BigDecimal openingBalance, List<BankTransaction> inputTxs)
    {
       List<BankTransaction> txs = (inputTxs == null) ? List.of() : inputTxs;
-      StringBuilder sb = new StringBuilder();
-      int lineNo = 1;
 
-      sb.append(record("000", lineNo++))
-            .append(padRight(safe(bankName), 12))
-            .append(padRight(safe(accountNumber), 18))
-            .append(padRight(safe(currency), 3))
-            .append("\n");
+      // Build CodaStatement
+      CodaStatement statement = buildCodaStatement(bankName, accountNumber, currency, statementDate, openingBalance, txs);
 
-      sb.append(record("100", lineNo++))
-            .append(statementDate.format(YYYYMMDD))
-            .append(padLeft(amountToCents(openingBalance), 15, '0'))
-            .append("\n");
+      // Use simple write method for standard CODA generation
+      return writer.write(statement);
+   }
 
+   private CodaStatement buildCodaStatement(String bankName, String accountNumber, String currency,
+         LocalDate statementDate, BigDecimal openingBalance, List<BankTransaction> txs)
+   {
+      // Header record
+      HeaderRecord header = HeaderRecord.builder()
+            .sequenceNumber(1)
+            .versionCode("2")
+            .creationDate(statementDate)
+            .bankIdentificationNumber("300")
+            .applicationCode("05")
+            .recipientName(bankName)
+            .bic("BBRUBEBB")
+            .accountNumber(accountNumber)
+            .accountDescription("Current account")
+            .oldBalanceSign("0")
+            .duplicateCode("2")
+            .build();
+
+      // Old balance record
+      OldBalanceRecord oldBalance = OldBalanceRecord.builder()
+            .sequenceNumber(2)
+            .accountNumber(accountNumber.replace(" ", ""))
+            .accountNumberType("0")
+            .currencyCode(currency)
+            .countryCode("BE")
+            .oldBalance(openingBalance)
+            .balanceDate(statementDate)
+            .accountHolderName(bankName)
+            .accountDescription("Current account")
+            .sequenceNumberDetail(123)
+            .build();
+
+      // Movement records
+      List<MovementRecord> movements = new ArrayList<>();
       BigDecimal totalCredits = BigDecimal.ZERO;
       BigDecimal totalDebits = BigDecimal.ZERO;
 
+      int seq = 3;
       for (BankTransaction tx : txs)
       {
-         if (tx == null)
-         {
-            continue;
-         }
+         if (tx == null) continue;
 
          boolean credit = tx.type() == TransactionType.CREDIT;
          if (credit)
@@ -50,56 +74,59 @@ public class CodaGenerator
             totalDebits = totalDebits.add(tx.amount());
          }
 
-         sb.append(record("200", lineNo++))
-               .append(tx.bookingDate().format(YYYYMMDD))
-               .append(credit ? "CR" : "DB")
-               .append(padLeft(amountToCents(tx.amount()), 15, '0'))
-               .append(padRight(safe(tx.counterpartyAccount()), 18))
-               .append(padRight(safe(tx.counterpartyName()), 30))
-               .append(padRight(safe(tx.description()), 25))
-               .append(padRight(safe(tx.reference()), 25))
-               .append("\n");
+         MovementRecord movement = MovementRecord.builder()
+               .sequenceNumber(seq++)
+               .accountNumber(accountNumber.replace(" ", ""))
+               .transactionCode(credit ? "CR000000" : "DR000000")
+               .amount(tx.amount())
+               .valueDate(tx.bookingDate())
+               .transactionReference(tx.reference() != null ? tx.reference() : "")
+               .communicationStructured("")
+               .transactionDate(tx.bookingDate())
+               .statementNumber("123")
+               .globalSequence("0")
+               .statementSequence("0")
+               .counterpartyName(tx.counterpartyName())
+               .counterpartyBic("BBRUBEBB")
+               .counterpartyAccount(tx.counterpartyAccount())
+               .counterpartyAccountName(tx.counterpartyName())
+               .counterpartyAddress(tx.description() != null ? tx.description() : "")
+               .counterpartyPostalCode("")
+               .counterpartyCity("")
+               .transactionCategory("1")
+               .purposeCategory("0")
+               .build();
+
+         movements.add(movement);
       }
 
+      // New balance record - sequence is 3 + number of movements (since movements start at 3)
       BigDecimal closingBalance = openingBalance.add(totalCredits).subtract(totalDebits);
+      int newBalanceSeq = 3 + movements.size();
+      NewBalanceRecord newBalance = NewBalanceRecord.builder()
+            .sequenceNumber(newBalanceSeq)
+            .accountNumber(accountNumber.replace(" ", ""))
+            .accountNumberType("0")
+            .currencyCode(currency)
+            .countryCode("BE")
+            .newBalance(closingBalance)
+            .balanceDate(statementDate)
+            .build();
 
-      sb.append(record("800", lineNo++))
-            .append("CR")
-            .append(padLeft(amountToCents(totalCredits), 15, '0'))
-            .append("DB")
-            .append(padLeft(amountToCents(totalDebits), 15, '0'))
-            .append("\n");
+      // Trailer record - sequence is after new balance
+      TrailerRecord trailer = TrailerRecord.builder()
+            .sequenceNumber(newBalanceSeq + 1)
+            .numberOfRecords(movements.size() + 4)  // header, old balance, movements, new balance
+            .totalDebit(totalDebits)
+            .totalCredit(totalCredits)
+            .build();
 
-      sb.append(record("900", lineNo++))
-            .append("CL")
-            .append(padLeft(amountToCents(closingBalance), 15, '0'))
-            .append("\n");
-
-      return sb.toString();
-   }
-
-   private String record(String code, int lineNo)
-   {
-      return code + String.format("%06d", lineNo);
-   }
-
-   private String padRight(String s, int n)
-   {
-      return String.format("%-" + n + "s", s);
-   }
-
-   private String padLeft(String s, int n, char c)
-   {
-      return String.format("%" + n + "s", s).replace(' ', c);
-   }
-
-   private String amountToCents(BigDecimal amt)
-   {
-      return amt.setScale(2, RoundingMode.HALF_UP).movePointRight(2).toBigInteger().toString();
-   }
-
-   private String safe(String s)
-   {
-      return (s == null) ? "" : s;
+      return CodaStatement.builder()
+            .header(header)
+            .oldBalance(oldBalance)
+            .movements(movements)
+            .newBalance(newBalance)
+            .trailer(trailer)
+            .build();
    }
 }

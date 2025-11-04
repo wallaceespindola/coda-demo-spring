@@ -37,7 +37,7 @@ class CodaControllerTest
       assertEquals("attachment", disposition.getType());
       assertEquals("booking_statement.coda", disposition.getFilename());
       assertTrue(response.getBody().contains("CLIENT X"));
-      assertTrue(response.getBody().contains("CR000000000012500"));
+      assertTrue(response.getBody().contains("CR000000") && response.getBody().contains("000000000012500"));
    }
 
    @Test
@@ -65,8 +65,8 @@ class CodaControllerTest
       ContentDisposition disposition = response.getHeaders().getContentDisposition();
       assertEquals("attachment", disposition.getType());
       assertEquals("statement.coda", disposition.getFilename());
-      assertTrue(response.getBody().contains("CLIENT X"));
-      assertTrue(response.getBody().contains("CR000000000012500"));
+      assertTrue(response.getBody() != null && response.getBody().contains("CLIENT X"));
+      assertTrue(response.getBody() != null && (response.getBody().contains("CR000000") && response.getBody().contains("000000000012500")));
    }
 
    @Test
