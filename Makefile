@@ -24,11 +24,19 @@ docker-run:
 
 .PHONY: compose-up
 compose-up:
+	docker compose up
+
+.PHONY: compose-up-b
+compose-up-b:
 	docker compose up --build
 
 .PHONY: compose-down
 compose-down:
 	docker compose down
+
+.PHONY: compose-down-v
+compose-down-v:
+	docker compose down -v
 
 .PHONY: clean
 clean:

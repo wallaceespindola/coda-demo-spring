@@ -19,7 +19,7 @@ RESPONSE=$(curl -s -X POST http://localhost:8080/api/coda/json \
       "bookingDate": "2025-11-03",
       "type": "CREDIT",
       "amount": 2441.20,
-      "counterpartyName": "AXA BELGIUM SA",
+      "counterpartyName": "AZA BELGIUM SA",
       "counterpartyAccount": "BE84390060159859",
       "description": "Payment received",
       "reference": "+++017/5086/22021+++"

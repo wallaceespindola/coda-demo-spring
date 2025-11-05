@@ -1,11 +1,13 @@
 package com.example.coda.service;
 
-import com.example.coda.model.*;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.example.coda.model.CodaStatement;
+import com.example.coda.model.MovementRecord;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test CODA Parser and Writer with real CODA file
@@ -26,7 +28,7 @@ class CodaParserWriterTest
 
       // Verify header
       assertNotNull(statement.getHeader());
-      assertTrue(statement.getHeader().getRecipientName().contains("AXA BELGIUM SA"));
+      assertTrue(statement.getHeader().getRecipientName().contains("AZA BELGIUM SA"));
       assertNotNull(statement.getHeader().getBic(), "BIC should not be null");
       assertTrue(statement.getHeader().getBic().trim().length() > 0, 
             "BIC should have content, got: '" + statement.getHeader().getBic() + "'");

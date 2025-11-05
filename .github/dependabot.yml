@@ -12,7 +12,7 @@ updates:
     labels:
       - "dependencies"
       - "maven"
-    ignore: []
+    ignore: [ ]
 
   # Keep GitHub Actions up to date
   - package-ecosystem: "github-actions"

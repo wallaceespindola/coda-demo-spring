@@ -4,7 +4,7 @@ echo "========================================="
 echo "Running CODA Writer Tests"
 echo "========================================="
 
-cd /home/aiyrh/git3/coda-demo-spring
+cd /home/git/coda-demo-spring
 
 # Set Java 21
 export JAVA_HOME=/usr/lib/jvm/java-21-amazon-corretto

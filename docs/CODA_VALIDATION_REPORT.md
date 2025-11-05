@@ -19,8 +19,8 @@ Position  6-11 : Creation date "032530" (DDMMYY)
 Position  12-14: Bank ID "005"
 Position  15-16: Application code "  "
 Position  17-24: Reserved (spaces)
-Position  25-50: Recipient name "04308988  AXA BELGIUM SA"
-Position  51-61: BIC "BBRUBEBB   "
+Position  25-50: Recipient name "04308988  AZA BELGIUM SA"
+Position  51-61: BIC "GKCCBEBB   "
 Position  62-76: Account number "00404483367 000"
 Position  77-90: Account description "00            "
 Position  91   : Old balance sign "  "
@@ -39,7 +39,7 @@ Position  21-22: Country "BE"
 Position  23-24: Reserved
 Position  25-39: Old balance "0000000170022"
 Position  40-45: Balance date "110270" (DDMMYY)
-Position  46-71: Account holder "225AXA BELGIUM SA"
+Position  46-71: Account holder "225AZA BELGIUM SA"
 Position  72-105: Description "Compte à vue"
 Position  106-108: Sequence detail "024"
 Position  109-128: Reserved

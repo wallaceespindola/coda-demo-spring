@@ -1,7 +1,6 @@
 package com.example.coda.service;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.example.coda.model.BankTransaction;
 import com.example.coda.model.TransactionType;
 import java.math.BigDecimal;
@@ -27,18 +26,12 @@ class CodaGeneratorTest
    @Test
    void generateIncludesTransactionLinesAndTotals()
    {
-      BankTransaction tx = BankTransaction.builder()
-            .bookingDate(LocalDate.of(2025, 9, 3))
-            .type(TransactionType.CREDIT)
-            .amount(new BigDecimal("125.00"))
-            .counterpartyName("CLIENT X")
-            .counterpartyAccount("BE12 3456 7890 1234")
-            .description("Payment received")
-            .reference("INV-2025-0456")
-            .build();
+      BankTransaction tx = BankTransaction.builder().bookingDate(LocalDate.of(2025, 9, 3)).type(
+            TransactionType.CREDIT).amount(new BigDecimal("125.00")).counterpartyName("CLIENT X").counterpartyAccount(
+            "BE12 3456 7890 1234").description("Payment received").reference("INV-2025-0456").build();
 
-      String out = generator.generate("BELFIUS", "BE68 5390 0754 7034", "EUR",
-            LocalDate.of(2025, 9, 4), new BigDecimal("1200.00"), List.of(tx));
+      String out = generator.generate("BELFIUS", "BE68 5390 0754 7034", "EUR", LocalDate.of(2025, 9, 4),
+            new BigDecimal("1200.00"), List.of(tx));
 
       assertTrue(out.contains("21"), "Transaction record marker missing");
       assertTrue(out.contains("CR000000000000000012500"), "Credit amount should be represented in cents");

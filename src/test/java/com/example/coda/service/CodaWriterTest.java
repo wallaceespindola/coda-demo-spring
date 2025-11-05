@@ -1,16 +1,19 @@
 package com.example.coda.service;
 
-import com.example.coda.model.*;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.example.coda.model.CodaStatement;
+import com.example.coda.model.HeaderRecord;
+import com.example.coda.model.MovementRecord;
+import com.example.coda.model.NewBalanceRecord;
+import com.example.coda.model.OldBalanceRecord;
+import com.example.coda.model.TrailerRecord;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for CodaWriter to validate output matches coda_test.txt exactly
@@ -103,8 +106,8 @@ class CodaWriterTest {
             .creationDate(LocalDate.of(2025, 3, 3))
             .bankIdentificationNumber("300")
             .applicationCode("05")
-            .recipientName("04308988  AXA BELGIUM SA")
-            .bic("BBRUBEBB")
+            .recipientName("04308988  AZA BELGIUM SA")
+            .bic("GKCCBEBB")
             .accountNumber("00404483367 000")
             .accountDescription("00")
             .oldBalanceSign("")
@@ -120,7 +123,7 @@ class CodaWriterTest {
             .countryCode("R0")
             .oldBalance(new BigDecimal("300.00"))
             .balanceDate(null)
-            .accountHolderName("0000170022110270225AXA BEL")
+            .accountHolderName("0000170022110270225AZA BEL")
             .accountDescription("GIUM SA            Compte à vue")
             .sequenceNumberDetail(0)
             .build();
@@ -132,42 +135,42 @@ class CodaWriterTest {
         movements.add(createVcsMovement(1, "3010383003291000028", 
             new BigDecimal("2441.20"), LocalDate.of(2025, 3, 25),
             "REGROUPEMENT DE      6 VCS", "03032502410",
-            "UCAR", "BE84390060159859", "BBRUBEBB",
-            "BEKE TUINWIJK 35", "9950", "WAARSCHOOT"));
+            "UCAR", "BE84390060159859", "GKCCBEBB",
+            "BEKE TUINSTRAT 7", "9950", "WALESCHELT"));
         
-        // VCS 2: VAN HOOREBEKE CLAEYS FRANK
+        // VCS 2: FRANK VAN HULREBEDE CLOVIS
         movements.add(createVcsMovement(2, "3010383003291000028",
             new BigDecimal("724.80"), LocalDate.of(2025, 3, 25),
             "102141359004019", "03032502401",
-            "VAN HOOREBEKE CLAEYS FRANK", "BE84390060159859", "BBRUBEBB",
-            "WESTSTRAAT 105 A", "9950", "WAARSCHOOT"));
+            "FRANK VAN HULREBEDE CLOVIS", "BE84390060159859", "GKCCBEBB",
+            "WESTSTRAAT 105 A", "9950", "WALESCHELT"));
         
-        // VCS 3: DOE JOHN
+        // VCS 3: JOE JOHN
         movements.add(createVcsMovement(3, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "102146453781091", "03032502401",
-            "DOE JOHN", "BE03737623180684", "KREDBEBB",
-            "BOSDORP              118", "9190", "STEKENE"));
+            "JOE JOHN", "BE03737623180684", "KREDBEBB",
+            "BOSDORP              118", "9190", "ETEBELE"));
         
-        // VCS 4: STEEMAN-MARTENS PATRICK + MARTINE
+        // VCS 4: MARTINS-STILMAN PATRICE + MARTINE
         movements.add(createVcsMovement(4, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "102146453781091", "03032502401",
-            "STEEMAN-MARTENS PATRICK + MARTINE", "BE03737623180684", "KREDBEBB",
-            "BOSDORP              118", "9190", "STEKENE"));
+            "MARTINS-STILMAN PATRICE + MARTINE", "BE03737623180684", "KREDBEBB",
+            "BOSDORP              118", "9190", "ETEBELE"));
         
         // VCS 5: PAGLIARIC
         movements.add(createVcsMovement(5, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "101146498769085", "03032502401",
-            "PAGLIARIC", "BE63340091652308", "BBRUBEBB",
+            "PAGLIARIC", "BE63340091652308", "GKCCBEBB",
             "RUE DU CHENEUX 7", "4540", "AMAY"));
         
         // VCS 6: LIZIERO ERBI NICODEMO
         movements.add(createVcsMovement(6, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "101146498769085", "03032502411",
-            "LIZIERO ERBI NICODEMO", "BE63340091652308", "BBRUBEBB",
+            "LIZIERO ERBI NICODEMO", "BE63340091652308", "GKCCBEBB",
             "RUE DE LA CLOCHE 46", "4540", "AMAY"));
 
         // New balance record
