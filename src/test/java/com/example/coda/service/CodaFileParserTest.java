@@ -17,13 +17,17 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Unit test for parsing coda_test.txt file into Java data structures
  */
+@SpringBootTest
 class CodaFileParserTest
 {
-   private final CodaParser parser = new CodaParser();
+   @Autowired
+   private CodaParser parser;
 
    @Test
    void parseCodaTestFileIntoJavaDataStructure() throws IOException

@@ -12,14 +12,21 @@ import com.example.coda.model.CodaRecord23;
 import com.example.coda.model.CodaStatement;
 import com.example.coda.model.CodaTrailerRecord;
 import com.example.coda.model.TransactionType;
+import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Service
 public class CodaGenerator
 {
-   private final CodaWriter writer = new CodaWriter();
+   private final CodaWriter writer;
+
+   public CodaGenerator(CodaWriter writer)
+   {
+      this.writer = writer;
+   }
 
    public String generate(String bankName, String accountNumber, String currency, LocalDate statementDate,
          BigDecimal openingBalance, List<CodaBankTransaction> inputTxs)

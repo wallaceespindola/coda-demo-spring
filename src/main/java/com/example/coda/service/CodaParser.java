@@ -13,6 +13,7 @@ import com.example.coda.model.CodaRecord32;
 import com.example.coda.model.CodaStatement;
 import com.example.coda.model.CodaTrailerRecord;
 import com.example.coda.util.IbanUtil;
+import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -26,6 +27,7 @@ import java.util.List;
  * Parser for Belgian CODA bank statement format
  * Converts CODA text format to Java data structures
  */
+@Service
 public class CodaParser
 {
    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("ddMMyy");

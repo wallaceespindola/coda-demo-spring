@@ -8,14 +8,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Test CODA Parser and Writer with real CODA file
  */
+@SpringBootTest
 class CodaParserWriterTest
 {
-   private final CodaParser parser = new CodaParser();
-   private final CodaWriter writer = new CodaWriter();
+   @Autowired
+   private CodaParser parser;
+
+   @Autowired
+   private CodaWriter writer;
 
    @Test
    void parseRealCodaFile() throws IOException

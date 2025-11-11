@@ -20,13 +20,17 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Unit test for CodaWriter to validate output matches coda_test.txt exactly
  */
+@SpringBootTest
 class CodaWriterTest {
 
-    private final CodaWriter writer = new CodaWriter();
+    @Autowired
+    private CodaWriter writer;
 
     @Test
     void testGenerateCodaMatchesReferenceFile() throws IOException {

@@ -26,7 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/coda")
 public class CodaController
 {
-   private final CodaGenerator generator = new CodaGenerator();
+   private final CodaGenerator generator;
+
+   public CodaController(CodaGenerator generator)
+   {
+      this.generator = generator;
+   }
 
    @GetMapping(value = "/generate", produces = MediaType.TEXT_PLAIN_VALUE)
    public ResponseEntity<String> getCoda(

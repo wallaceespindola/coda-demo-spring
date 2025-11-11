@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.coda.model.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Core unit tests for CODA record parsing
@@ -15,15 +16,12 @@ import org.junit.jupiter.api.Test;
  * For comprehensive record-level testing including all sub-records (2.2, 2.3, 3.1, 3.2),
  * see CodaFileParserTest which tests complete CODA files with proper context.
  */
+@SpringBootTest
 class CodaRecordParsingTest
 {
+   @Autowired
    private CodaParser parser;
 
-   @BeforeEach
-   void setUp()
-   {
-      parser = new CodaParser();
-   }
 
    /**
     * Test Record 0 - Header Record

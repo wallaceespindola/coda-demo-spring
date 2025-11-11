@@ -19,8 +19,14 @@ import java.io.IOException;
 @Tag(name = "CODA Parser", description = "Parse and convert CODA bank statements")
 public class CodaParserController
 {
-   private final CodaParser parser = new CodaParser();
-   private final CodaWriter writer = new CodaWriter();
+   private final CodaParser parser;
+   private final CodaWriter writer;
+
+   public CodaParserController(CodaParser parser, CodaWriter writer)
+   {
+      this.parser = parser;
+      this.writer = writer;
+   }
 
    @PostMapping(value = "/parse", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
    @Operation(summary = "Parse CODA text to JSON", description = "Converts CODA format text to structured JSON")

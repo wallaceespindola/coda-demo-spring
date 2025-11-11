@@ -12,6 +12,7 @@ import com.example.coda.model.CodaRecord31;
 import com.example.coda.model.CodaRecord32;
 import com.example.coda.model.CodaStatement;
 import com.example.coda.model.CodaTrailerRecord;
+import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ import java.util.List;
  * Writer for Belgian CODA bank statement format
  * Converts Java data structures to CODA text format
  */
+@Service
 public class CodaWriter
 {
    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("ddMMyy");

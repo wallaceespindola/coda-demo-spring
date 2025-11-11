@@ -10,13 +10,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
+@SpringBootTest
 class CodaControllerTest
 {
-   private final CodaController controller = new CodaController();
+   @Autowired
+   private CodaController controller;
 
    @Test
    void downloadEndpointProducesAttachmentWithBody()
