@@ -31,7 +31,8 @@ class CodaControllerTest
       assertEquals("attachment", disposition.getType());
       assertEquals("booking_statement.coda", disposition.getFilename());
       assertTrue(response.getBody().contains("CLIENT X"));
-      assertTrue(response.getBody().contains("CR000000") && response.getBody().contains("000000000012500"));
+      // Check for CODA format: sign "0" for credit + amount "000000000125000" (125.00 in thousandths)
+      assertTrue(response.getBody().contains("0000000000125000"), "Should contain amount in CODA format");
    }
 
    @Test
@@ -49,8 +50,9 @@ class CodaControllerTest
       assertEquals("attachment", disposition.getType());
       assertEquals("statement.coda", disposition.getFilename());
       assertTrue(response.getBody() != null && response.getBody().contains("CLIENT X"));
-      assertTrue(response.getBody() != null && (response.getBody().contains("CR000000") && response.getBody().contains(
-            "000000000012500")));
+      // Check for CODA format: amount "000000000125000" (125.00 in thousandths)
+      assertTrue(response.getBody() != null && response.getBody().contains("0000000000125000"),
+            "Should contain amount in CODA format");
    }
 
    @Test

@@ -1,36 +1,70 @@
+# Header record 0:
 0000003032530005        04308988  AZA BELGIUM SA            GKCCBEBB   00404483367 00000                                       2
+# Data record 1 - old balance:
 10024310000017062 EUR0BE   0030000        0000000170022110270225AZA BELGIUM SA            Compte à vue                       024
+# Data record 2.1 – Global amount of all VCS:
 21000100003010383003291000028  0000000000244120030325201500000REGROUPEMENT DE      6 VCS                           03032502410 0
+# Data record 2.1 – Individual ART transaction:
 21000100013010383003291000028  0000000000072480030325601500001102141359004019                                      03032502401 0
+# Data record 2.2 – Individual ART transaction:
 2200010001                                                     NOTPROVIDED                        GKCCBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010001BE84390060159859                     UCAR                                                                          0 1
+# Information records 3.1 – Individual ART transaction:
 31000100023010383003291000028  601500001001UCAR                                                                              1 0
+# Information records 3.2 – Individual ART transaction:
 3200010002BEKE TUINSTRAT 7                   9950        WALESCHELT                                                          0 0
+# Data record 2.1 – Individual ART transaction:
 21000100033010383003291000028  0000000000072480030325601500001102141359004019                                      03032502401 0
+# Data record 2.2 – Individual ART transaction:
 2200010003                                                     NOTPROVIDED                        GKCCBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010003BE84390060159859                     FRANK VAN HULREBEDE CLOVIS                                                    0 1
+# Information records 3.1 – Individual ART transaction:
 31000100043010383003291000028  601500001001FRANK VAN HULREBEDE CLOVIS                                                        1 0
+# Information records 3.2 – Individual ART transaction:
 3200010004WESTSTRAAT 105 A                   9950        WALESCHELT                                                          0 0
+# Data record 2.1 – Individual ART transaction:
 21000100053010383003291000028  0000000000024790030325601500001102146453781091                                      03032502401 0
+# Data record 2.2 – Individual ART transaction:
 2200010005                                                     NOTPROVIDED                        KREDBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010005BE03737623180684                     JOE JOHN                                                                      0 1
+# Information records 3.1 – Individual ART transaction:
 31000100063010383003291000028  601500001001JOE JOHN                                                                          1 0
+# Information records 3.2 – Individual ART transaction:
 3200010006BOSDORP              118           9190        ETEBELE                                                             0 0
+# Data record 2.1 – Individual ART transaction:
 21000100073010383003291000028  0000000000024790030325601500001102146453781091                                      03032502401 0
+# Data record 2.2 – Individual ART transaction:
 2200010007                                                     NOTPROVIDED                        KREDBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010007BE03737623180684                     MARTINS-STILMAN PATRICE + MARTINE                                             0 1
+# Information records 3.1 – Individual ART transaction:
 31000100083010383003291000028  601500001001MARTINS-STILMAN PATRICE + MARTINE                                                 1 0
+# Information records 3.2 – Individual ART transaction:
 3200010008BOSDORP              118           9190        ETEBELE                                                             0 0
+# Data record 2.1 – Individual ART transaction:
 21000100093010383003291000028  0000000000024790030325601500001101146498769085                                      03032502401 0
+# Data record 2.2 – Individual ART transaction:
 2200010009                                                     NOTPROVIDED                        GKCCBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010009BE63340091652308                     PAGLIARIC                                                                     0 1
+# Information records 3.1 – Individual ART transaction:
 31000100103010383003291000028  601500001001PAGLIARIC                                                                         1 0
+# Information records 3.2 – Individual ART transaction:
 3200010010RUE DU CHENEUX 7                   4540        AMAY                                                                0 0
+# Data record 2.1 – Individual ART transaction:
 21000100113010383003291000028  0000000000024790030325601500001101146498769085                                      03032502411 0
+# Data record 2.2 – Individual ART transaction:
 2200010011                                                     NOTPROVIDED                        GKCCBEBB                   1 0
+# Data record 2.3 – Individual ART transaction:
 2300010011BE63340091652308                     LIZIERO ERBI NICODEMO                                                         0 1
+# Information records 3.1 – Individual ART transaction:
 31000100123010383003291000028  601500001001LIZIERO ERBI NICODEMO                                                             1 0
+# Information records 3.2 – Individual ART transaction:
 3200010012RUE DE LA CLOCHE 46                4540        AMAY                                                                0 0
+# Data record 8 - new balance:
 8024310000017062 EUR0BE   0030000        0000000170266230030325                                                                0
+# Trailer record 9:
 9               000033000000000000000000000000244120                                                                           1
-

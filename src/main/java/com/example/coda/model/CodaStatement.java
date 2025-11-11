@@ -11,9 +11,10 @@ import lombok.Data;
 @Builder
 public class CodaStatement
 {
-   private HeaderRecord header;
-   private OldBalanceRecord oldBalance;
-   private List<MovementRecord> movements;
-   private NewBalanceRecord newBalance;
-   private TrailerRecord trailer;
+   private CodaHeaderRecord header; // Record Type 0 - Header Record
+   private CodaOldBalanceRecord oldBalance; // Record Type 1 - Old Balance Record
+   private CodaGlobalRecord global; // Record Type 2.1 - Global amount of all VCS
+   private List<CodaIndividualTransactionRecord> individualTransactions; // Individual Transaction Records - Aggregates all related records (2.1, 2.2, 2.3, 3.1, 3.2)
+   private CodaNewBalanceRecord newBalance; // Record Type 8 - New Balance Record
+   private CodaTrailerRecord trailer; // Record Type 9 - Trailer Record
 }

@@ -1,11 +1,17 @@
 package com.example.coda.service;
 
+import com.example.coda.model.CodaGlobalRecord;
+import com.example.coda.model.CodaHeaderRecord;
+import com.example.coda.model.CodaIndividualTransactionRecord;
+import com.example.coda.model.CodaNewBalanceRecord;
+import com.example.coda.model.CodaOldBalanceRecord;
+import com.example.coda.model.CodaRecord21;
+import com.example.coda.model.CodaRecord22;
+import com.example.coda.model.CodaRecord23;
+import com.example.coda.model.CodaRecord31;
+import com.example.coda.model.CodaRecord32;
 import com.example.coda.model.CodaStatement;
-import com.example.coda.model.HeaderRecord;
-import com.example.coda.model.MovementRecord;
-import com.example.coda.model.NewBalanceRecord;
-import com.example.coda.model.OldBalanceRecord;
-import com.example.coda.model.TrailerRecord;
+import com.example.coda.model.CodaTrailerRecord;
 import com.example.coda.util.IbanUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,8 +37,8 @@ public class CodaParser
    public CodaStatement parse(String codaContent) throws IOException
    {
       CodaStatement.CodaStatementBuilder builder = CodaStatement.builder();
-      List<MovementRecord> movements = new ArrayList<>();
-      MovementRecord.MovementRecordBuilder currentMovement = null;
+      List<CodaIndividualTransactionRecord> transactionRecords = new ArrayList<>();
+      CodaIndividualTransactionRecord.CodaIndividualTransactionRecordBuilder currentTransaction = null;
 
       try (BufferedReader reader = new BufferedReader(new StringReader(codaContent)))
       {
@@ -56,49 +62,62 @@ public class CodaParser
                   builder.oldBalance(parseOldBalanceRecord(line));
                   break;
 
-               case "2": // Movement Records
+               case "2": // Transaction Records
                   String subType = line.substring(1, 2);
-                  if ("1".equals(subType)) // Movement Main Data
+                  if ("1".equals(subType)) // Transaction Main Data (Record 2.1)
                   {
-                     // Save previous movement if exists
-                     if (currentMovement != null)
+                     // Check if this is a global record (globalisation code = "1" at position 125)
+                     String globalisationCode = line.length() >= 125 ? line.substring(124, 125) : "0";
+
+                     if ("1".equals(globalisationCode))
                      {
-                        movements.add(currentMovement.build());
+                        // This is the global record (line 3) - parse as CodaGlobalRecord
+                        builder.global(parseGlobalRecord(line));
                      }
-                     // Start new movement
-                     currentMovement = parseMovementRecord21(line);
+                     else
+                     {
+                        // This is an individual transaction
+                        // Save previous transaction if exists
+                        if (currentTransaction != null)
+                        {
+                           transactionRecords.add(currentTransaction.build());
+                        }
+                        // Start new transaction
+                        currentTransaction = CodaIndividualTransactionRecord.builder()
+                              .record21(parseRecord21(line));
+                     }
                   }
-                  else if ("2".equals(subType) && currentMovement != null) // Communication
+                  else if ("2".equals(subType) && currentTransaction != null) // Communication
                   {
-                     parseMovementRecord22(line, currentMovement);
+                     currentTransaction.record22(parseRecord22(line));
                   }
-                  else if ("3".equals(subType) && currentMovement != null) // Counterparty Account
+                  else if ("3".equals(subType) && currentTransaction != null) // Counterparty Account
                   {
-                     parseMovementRecord23(line, currentMovement);
+                     currentTransaction.record23(parseRecord23(line));
                   }
                   break;
 
-               case "3": // Movement Detail Records
-                  if (currentMovement != null)
+               case "3": // Transaction Detail Records
+                  if (currentTransaction != null)
                   {
                      String subType3 = line.substring(1, 2);
                      if ("1".equals(subType3)) // Structured Communication
                      {
-                        parseMovementRecord31(line, currentMovement);
+                        currentTransaction.record31(parseRecord31(line));
                      }
                      else if ("2".equals(subType3)) // Counterparty Address
                      {
-                        parseMovementRecord32(line, currentMovement);
+                        currentTransaction.record32(parseRecord32(line));
                      }
                   }
                   break;
 
                case "8": // New Balance Record
-                  // Save last movement before new balance
-                  if (currentMovement != null)
+                  // Save last transaction before new balance
+                  if (currentTransaction != null)
                   {
-                     movements.add(currentMovement.build());
-                     currentMovement = null;
+                     transactionRecords.add(currentTransaction.build());
+                     currentTransaction = null;
                   }
                   builder.newBalance(parseNewBalanceRecord(line));
                   break;
@@ -110,150 +129,226 @@ public class CodaParser
          }
       }
 
-      builder.movements(movements);
+      builder.individualTransactions(transactionRecords);
       return builder.build();
    }
 
    /**
     * Parse Record Type 0 - Header (Identification Record)
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
     */
-   private HeaderRecord parseHeaderRecord(String line)
+   private CodaHeaderRecord parseHeaderRecord(String line)
    {
-      String accountNumber = extract(line, 61, 76).trim();
-      String completedAccount = IbanUtil.extractAndCompleteIban(accountNumber);
-
-      return HeaderRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))             // Pos 2-4
-            .versionCode(extract(line, 4, 5))                 // Pos 5
-            .creationDate(parseDate6(line, 5, 11))            // Pos 6-11
-            .bankIdentificationNumber(extract(line, 11, 14))  // Pos 12-14
-            .applicationCode(extract(line, 14, 16))           // Pos 15-16
-            .recipientName(extract(line, 23, 49).trim())      // Pos 24-49
-            .bic(extract(line, 49, 61).trim())                // Pos 50-61
-            .accountNumber(completedAccount)                             // Pos 62-76
-            .accountDescription(extract(line, 76, 90).trim()) // Pos 77-90
-            .oldBalanceSign(extract(line, 90, 91))            // Pos 91
-            .duplicateCode(extract(line, 127, 128))           // Pos 128
+      return CodaHeaderRecord.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .zeros(extract(line, 1, 5))                          // Pos 2-5
+            .creationDate(parseDate6(line, 5, 11))               // Pos 6-11
+            .bankIdentificationNumber(extract(line, 11, 14))     // Pos 12-14
+            .applicationCode(extract(line, 14, 16))              // Pos 15-16
+            .duplicateCode(extract(line, 16, 17))                // Pos 17
+            .filler1(extract(line, 17, 24))                      // Pos 18-24
+            .fileReference(extract(line, 24, 34))                // Pos 25-34 (preserve whitespace)
+            .nameAddressee(extract(line, 34, 60))                // Pos 35-60 (preserve whitespace)
+            .bic(extract(line, 60, 71))                          // Pos 61-71 (preserve whitespace)
+            .vatNumber(extract(line, 71, 82).trim())             // Pos 72-82
+            .filler2(extract(line, 82, 83))                      // Pos 83
+            .codeSeparateApplication(extract(line, 83, 88))      // Pos 84-88
+            .transactionReference(extract(line, 88, 104))        // Pos 89-104
+            .relatedReference(extract(line, 104, 120))           // Pos 105-120
+            .filler3(extract(line, 120, 127))                    // Pos 121-127
+            .versionCode(extract(line, 127, 128))                // Pos 128
             .build();
    }
 
    /**
     * Parse Record Type 1 - Old Balance
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
     */
-   private OldBalanceRecord parseOldBalanceRecord(String line)
+   private CodaOldBalanceRecord parseOldBalanceRecord(String line)
    {
-      String accountNumber = extract(line, 4, 16).trim();
+      String accountNumber = extract(line, 5, 42).trim();
       String completedAccount = IbanUtil.extractAndCompleteIban(accountNumber);
 
-      return OldBalanceRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))              // Pos 2-4
-            .accountNumber(completedAccount)                              // Pos 5-16
-            .accountNumberType(extract(line, 16, 17))          // Pos 17
-            .currencyCode(extract(line, 17, 20))               // Pos 18-20
-            .countryCode(extract(line, 20, 22))                // Pos 21-22
-            .oldBalance(parseAmount(line, 24, 39))             // Pos 25-39
-            .balanceDate(parseDate6(line, 39, 45))             // Pos 40-45
-            .accountHolderName(extract(line, 45, 71).trim())   // Pos 46-71
-            .accountDescription(extract(line, 71, 105).trim()) // Pos 72-105
-            .sequenceNumberDetail(parseInt(line, 105, 108))    // Pos 106-108
+      return CodaOldBalanceRecord.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .accountStructure(extract(line, 1, 2))               // Pos 2
+            .statementNumber(extract(line, 2, 5))                // Pos 3-5
+            .accountNumber(completedAccount)                                // Pos 6-42
+            .oldBalanceSign(extract(line, 42, 43))               // Pos 43
+            .oldBalance(parseAmount(line, 43, 58))               // Pos 44-58
+            .balanceDate(parseDate6(line, 58, 64))               // Pos 59-64
+            .accountHolderName(extract(line, 64, 90))            // Pos 65-90 (preserve whitespace)
+            .accountDescription(extract(line, 90, 125))          // Pos 91-125 (preserve whitespace)
+            .statementNumberDetail(extract(line, 125, 128))      // Pos 126-128
             .build();
    }
 
    /**
-    * Parse Record Type 21 - Movement Main Data
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
+    * Parse Record Type 2.1 - Transaction Main Data
     */
-   private MovementRecord.MovementRecordBuilder parseMovementRecord21(String line)
+   private CodaRecord21 parseRecord21(String line)
    {
-      return MovementRecord.builder()
-            .sequenceNumber(parseInt(line, 2, 6))                   // Pos 3-6
-            .accountNumber(extract(line, 6, 18).trim())             // Pos 7-18
-            .transactionCode(extract(line, 18, 26))                 // Pos 19-26
-            .amount(parseAmount(line, 26, 41))                      // Pos 27-41
-            .valueDate(parseDate6(line, 41, 47))                    // Pos 42-47
-            .transactionReference(extract(line, 47, 68).trim())     // Pos 48-68
-            .communicationStructured(extract(line, 68, 115).trim()) // Pos 69-115
-            .transactionDate(parseDate6(line, 115, 121))            // Pos 116-121
-            .statementNumber(extract(line, 121, 124))               // Pos 122-124
-            .globalSequence(extract(line, 124, 127))                // Pos 125-127
-            .statementSequence(extract(line, 127, 128));            // Pos 128
+      return CodaRecord21.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .articleCode(extract(line, 1, 2))                    // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))       // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                  // Pos 7-10
+            .referenceNumber(extract(line, 10, 31).trim())       // Pos 11-31
+            .movementSign(extract(line, 31, 32))                 // Pos 32
+            .amount(parseAmount(line, 32, 47))                   // Pos 33-47
+            .valueDate(parseDate6(line, 47, 53))                 // Pos 48-53
+            .transactionCode(extract(line, 53, 61))              // Pos 54-61
+            .communicationType(extract(line, 61, 62))            // Pos 62
+            .communicationZone(extract(line, 62, 115).trim())    // Pos 63-115
+            .entryDate(parseDate6(line, 115, 121))               // Pos 116-121
+            .statementNumber(extract(line, 121, 124))            // Pos 122-124
+            .globalisationCode(extract(line, 124, 125))          // Pos 125
+            .nextCode(extract(line, 125, 126))                   // Pos 126
+            .filler(extract(line, 126, 127))                     // Pos 127
+            .linkCode(extract(line, 127, 128))                   // Pos 128
+            .build();
    }
 
    /**
-    * Parse Record Type 22 - Communication
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
+    * Parse Record Type 2.1 - Global Record (Line 3 - Mandatory)
+    * This is the global amount of all VCS transactions
     */
-   private void parseMovementRecord22(String line, MovementRecord.MovementRecordBuilder builder)
+   private CodaGlobalRecord parseGlobalRecord(String line)
    {
-      builder.counterpartyName(extract(line, 10, 63).trim())   // Pos 11-63
-            .counterpartyBic(extract(line, 63, 74).trim())     // Pos 64-74
-            .transactionCategory(extract(line, 96, 97))        // Pos 97
-            .purposeCategory(extract(line, 97, 98));           // Pos 98
+      return CodaGlobalRecord.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .articleCode(extract(line, 1, 2))                    // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))       // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                  // Pos 7-10
+            .referenceNumber(extract(line, 10, 31).trim())       // Pos 11-31
+            .movementSign(extract(line, 31, 32))                 // Pos 32
+            .amount(parseAmount(line, 32, 47))                   // Pos 33-47
+            .valueDate(parseDate6(line, 47, 53))                 // Pos 48-53
+            .transactionCode(extract(line, 53, 61))              // Pos 54-61
+            .communicationType(extract(line, 61, 62))            // Pos 62
+            .communicationZone(extract(line, 62, 115).trim())    // Pos 63-115
+            .entryDate(parseDate6(line, 115, 121))               // Pos 116-121
+            .statementNumber(extract(line, 121, 124))            // Pos 122-124
+            .globalisationCode(extract(line, 124, 125))          // Pos 125
+            .nextCode(extract(line, 125, 126))                   // Pos 126
+            .filler(extract(line, 126, 127))                     // Pos 127
+            .linkCode(extract(line, 127, 128))                   // Pos 128
+            .build();
    }
 
    /**
-    * Parse Record Type 23 - Counterparty Account
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
+    * Parse Record Type 2.2 - Communication
     */
-   private void parseMovementRecord23(String line, MovementRecord.MovementRecordBuilder builder)
+   private CodaRecord22 parseRecord22(String line)
    {
-      String account = extract(line, 10, 47).trim();           // Pos 11-47
-      // Auto-complete Belgian IBAN if applicable
+      return CodaRecord22.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .articleCode(extract(line, 1, 2))                    // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))       // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                  // Pos 7-10
+            .clientReference(extract(line, 10, 63).trim())       // Pos 11-63
+            .counterpartyName(extract(line, 63, 90).trim())      // Pos 64-90
+            .counterpartyBic(extract(line, 90, 101).trim())      // Pos 91-101
+            .filler1(extract(line, 101, 125))                    // Pos 102-125
+            .transactionCategory(extract(line, 125, 126))        // Pos 126
+            .filler2(extract(line, 126, 127))                    // Pos 127
+            .nextCode(extract(line, 127, 128))                   // Pos 128
+            .build();
+   }
+
+   /**
+    * Parse Record Type 2.3 - Counterparty Account
+    */
+   private CodaRecord23 parseRecord23(String line)
+   {
+      String account = extract(line, 10, 47).trim();
       String completedAccount = IbanUtil.extractAndCompleteIban(account);
 
-      builder.counterpartyAccount(completedAccount).counterpartyAccountName(extract(line, 47, 82).trim()); // Pos 48-82
+      return CodaRecord23.builder()
+            .recordIdentification(extract(line, 0, 1))             // Pos 1
+            .articleCode(extract(line, 1, 2))                      // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))         // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                    // Pos 7-10
+            .counterpartyAccount(completedAccount)                            // Pos 11-47
+            .counterpartyAccountName(extract(line, 47, 82).trim()) // Pos 48-82
+            .filler1(extract(line, 82, 125))                       // Pos 83-125
+            .purposeCategory(extract(line, 125, 126))              // Pos 126
+            .filler2(extract(line, 126, 127))                      // Pos 127
+            .nextCode(extract(line, 127, 128))                     // Pos 128
+            .build();
    }
 
    /**
-    * Parse Record Type 31 - Structured Communication
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
+    * Parse Record Type 3.1 - Structured Communication
     */
-   private void parseMovementRecord31(String line, MovementRecord.MovementRecordBuilder builder)
+   private CodaRecord31 parseRecord31(String line)
    {
-      builder.structuredCommunication(extract(line, 20, 100).trim()); // Pos 21-100
+      return CodaRecord31.builder()
+            .recordIdentification(extract(line, 0, 1))              // Pos 1
+            .articleCode(extract(line, 1, 2))                       // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))          // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                     // Pos 7-10
+            .referenceNumber(extract(line, 10, 31).trim())          // Pos 11-31
+            .transactionCode(extract(line, 31, 39))                 // Pos 32-39
+            .structuredCommunication(extract(line, 39, 112).trim()) // Pos 40-112
+            .filler1(extract(line, 112, 125))                       // Pos 113-125
+            .nextCode1(extract(line, 125, 126))                     // Pos 126
+            .filler2(extract(line, 126, 127))                       // Pos 127
+            .nextCode2(extract(line, 127, 128))                     // Pos 128
+            .build();
    }
 
    /**
-    * Parse Record Type 32 - Counterparty Address
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
+    * Parse Record Type 3.2 - Counterparty Address
     */
-   private void parseMovementRecord32(String line, MovementRecord.MovementRecordBuilder builder)
+   private CodaRecord32 parseRecord32(String line)
    {
-      builder.counterpartyAddress(extract(line, 10, 45).trim())    // Pos 11-45
-            .counterpartyPostalCode(extract(line, 45, 52).trim())  // Pos 46-52
-            .counterpartyCity(extract(line, 52, 84).trim());       // Pos 53-84
+      return CodaRecord32.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .articleCode(extract(line, 1, 2))                    // Pos 2
+            .continuousSequenceNumber(extract(line, 2, 6))       // Pos 3-6
+            .detailNumber(extract(line, 6, 10))                  // Pos 7-10
+            .counterpartyAddress(extract(line, 10, 45).trim())   // Pos 11-45 (35 chars)
+            .counterpartyPostalCode(extract(line, 45, 57).trim())// Pos 46-57 (12 chars)
+            .counterpartyCity(extract(line, 57, 92).trim())      // Pos 58-92 (35 chars)
+            .filler1(extract(line, 92, 124))                     // Pos 93-124 (32 chars)
+            .nextCode1(extract(line, 124, 125))                  // Pos 125
+            .filler2(extract(line, 125, 126))                    // Pos 126
+            .nextCode2(extract(line, 126, 127))                  // Pos 127
+            .build();
    }
 
    /**
     * Parse Record Type 8 - New Balance
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
     */
-   private NewBalanceRecord parseNewBalanceRecord(String line)
+   private CodaNewBalanceRecord parseNewBalanceRecord(String line)
    {
-      return NewBalanceRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))           // Pos 2-4
-            .accountNumber(extract(line, 4, 16).trim())     // Pos 5-16
-            .accountNumberType(extract(line, 16, 17))       // Pos 17
-            .currencyCode(extract(line, 17, 20))            // Pos 18-20
-            .countryCode(extract(line, 20, 22))             // Pos 21-22
-            .newBalance(parseAmount(line, 24, 39))          // Pos 25-39
-            .balanceDate(parseDate6(line, 39, 45))          // Pos 40-45
+      String accountNumber = extract(line, 5, 42).trim();
+      String completedAccount = IbanUtil.extractAndCompleteIban(accountNumber);
+
+      return CodaNewBalanceRecord.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .accountStructure(extract(line, 1, 2))               // Pos 2
+            .statementNumber(extract(line, 2, 5))                // Pos 3-5
+            .accountNumber(completedAccount)                                // Pos 6-42
+            .newBalanceSign(extract(line, 42, 43))               // Pos 43
+            .newBalance(parseAmount(line, 43, 58))               // Pos 44-58
+            .balanceDate(parseDate6(line, 58, 64))               // Pos 59-64
+            .filler(extract(line, 64, 128))                      // Pos 65-128
             .build();
    }
 
    /**
     * Parse Record Type 9 - Trailer
-    * Positions based on CODA specification (1-indexed, converted to 0-indexed)
     */
-   private TrailerRecord parseTrailerRecord(String line)
+   private CodaTrailerRecord parseTrailerRecord(String line)
    {
-      return TrailerRecord.builder()
-            .sequenceNumber(parseInt(line, 1, 4))        // Pos 2-4 (not used, reserved)
-            .numberOfRecords(parseInt(line, 16, 22))     // Pos 17-22
-            .totalDebit(parseAmount(line, 22, 37))       // Pos 23-37
-            .totalCredit(parseAmount(line, 37, 52))      // Pos 38-52
+      return CodaTrailerRecord.builder()
+            .recordIdentification(extract(line, 0, 1))           // Pos 1
+            .filler1(extract(line, 1, 16))                       // Pos 2-16
+            .numberOfRecords(parseInt(line, 16, 22))             // Pos 17-22
+            .totalDebit(parseAmount(line, 22, 37))               // Pos 23-37
+            .totalCredit(parseAmount(line, 37, 52))              // Pos 38-52
+            .filler2(extract(line, 52, 127))                     // Pos 53-127
+            .trailerMarker(extract(line, 127, 128))              // Pos 128
             .build();
    }
 
@@ -263,7 +358,7 @@ public class CodaParser
    {
       if (line.length() < end)
       {
-         return line.substring(start).trim();
+         return line.length() > start ? line.substring(start).trim() : "";
       }
       return line.substring(start, end);
    }
@@ -276,44 +371,29 @@ public class CodaParser
 
    private BigDecimal parseAmount(String line, int start, int end)
    {
-      String value = extract(line, start, end).trim().replaceAll("\\s+", "");
-      if (value.isEmpty() || value.equals("0"))
+      String value = extract(line, start, end).trim();
+      if (value.isEmpty())
       {
          return BigDecimal.ZERO;
       }
-      try
-      {
-         // Amount is in cents, divide by 100
-         return new BigDecimal(value).divide(new BigDecimal("100"));
-      }
-      catch (NumberFormatException e)
-      {
-         return BigDecimal.ZERO;
-      }
+      // Amount is in cents (last 3 digits are decimals)
+      return new BigDecimal(value).divide(new BigDecimal("1000"));
    }
 
    private LocalDate parseDate6(String line, int start, int end)
    {
-      String value = extract(line, start, end).trim();
-      if (value.isEmpty() || value.equals("000000"))
+      String dateStr = extract(line, start, end).trim();
+      if (dateStr.isEmpty() || "000000".equals(dateStr) || "0000".equals(dateStr) || dateStr.matches("0+"))
       {
          return null;
       }
       try
       {
-         return LocalDate.parse(value, DATE_FORMAT);
+         return LocalDate.parse(dateStr, DATE_FORMAT);
       }
       catch (Exception e)
       {
-         // Try alternative format
-         try
-         {
-            return LocalDate.parse(value, DATE_FORMAT_FULL);
-         }
-         catch (Exception ex)
-         {
-            return null;
-         }
+         return null;
       }
    }
 }

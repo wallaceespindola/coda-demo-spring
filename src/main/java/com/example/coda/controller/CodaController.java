@@ -1,6 +1,6 @@
 package com.example.coda.controller;
 
-import com.example.coda.model.BankTransaction;
+import com.example.coda.model.CodaBankTransaction;
 import com.example.coda.model.CodaRequest;
 import com.example.coda.model.TransactionType;
 import com.example.coda.service.CodaGenerator;
@@ -70,8 +70,8 @@ public class CodaController
 
    private ResponseEntity<String> buildResponse(CodaRequest req, boolean attachment, String filename)
    {
-      List<BankTransaction> txs = req.transactions().stream()
-            .map(tx -> BankTransaction.builder()
+      List<CodaBankTransaction> txs = req.transactions().stream()
+            .map(tx -> CodaBankTransaction.builder()
                   .bookingDate(tx.bookingDate())
                   .type(tx.type())
                   .amount(tx.amount())
@@ -91,12 +91,12 @@ public class CodaController
    {
       LocalDate statementDate = parseDate(date);
       BigDecimal openingBalance = parseAmount(opening);
-      List<BankTransaction> txs = parseInlineTransactions(rawTx);
+      List<CodaBankTransaction> txs = parseInlineTransactions(rawTx);
       return respond(bankName, account, currency, statementDate, openingBalance, txs, attachment, filename);
    }
 
    private ResponseEntity<String> respond(String bankName, String account, String currency, LocalDate statementDate,
-         BigDecimal openingBalance, List<BankTransaction> txs, boolean attachment, String filename)
+         BigDecimal openingBalance, List<CodaBankTransaction> txs, boolean attachment, String filename)
    {
       String body = generator.generate(bankName, account, currency, statementDate, openingBalance, txs);
       HttpHeaders headers = new HttpHeaders();
@@ -134,14 +134,14 @@ public class CodaController
       }
    }
 
-   private List<BankTransaction> parseInlineTransactions(List<String> rawTx)
+   private List<CodaBankTransaction> parseInlineTransactions(List<String> rawTx)
    {
       if (rawTx == null || rawTx.isEmpty())
       {
          return List.of();
       }
 
-      List<BankTransaction> txs = new ArrayList<>();
+      List<CodaBankTransaction> txs = new ArrayList<>();
       int index = 1;
       for (String entry : rawTx)
       {
@@ -204,7 +204,7 @@ public class CodaController
          String description = (parts.length > 5 && !parts[5].isBlank()) ? parts[5].trim() : null;
          String reference = (parts.length > 6 && !parts[6].isBlank()) ? parts[6].trim() : null;
 
-         txs.add(BankTransaction.builder()
+         txs.add(CodaBankTransaction.builder()
                .bookingDate(bookingDate)
                .type(type)
                .amount(amount)

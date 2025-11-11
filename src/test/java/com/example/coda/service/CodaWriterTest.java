@@ -2,12 +2,18 @@ package com.example.coda.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.example.coda.model.CodaGlobalRecord;
+import com.example.coda.model.CodaHeaderRecord;
+import com.example.coda.model.CodaIndividualTransactionRecord;
+import com.example.coda.model.CodaNewBalanceRecord;
+import com.example.coda.model.CodaOldBalanceRecord;
+import com.example.coda.model.CodaRecord21;
+import com.example.coda.model.CodaRecord22;
+import com.example.coda.model.CodaRecord23;
+import com.example.coda.model.CodaRecord31;
+import com.example.coda.model.CodaRecord32;
 import com.example.coda.model.CodaStatement;
-import com.example.coda.model.HeaderRecord;
-import com.example.coda.model.MovementRecord;
-import com.example.coda.model.NewBalanceRecord;
-import com.example.coda.model.OldBalanceRecord;
-import com.example.coda.model.TrailerRecord;
+import com.example.coda.model.CodaTrailerRecord;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -47,7 +53,14 @@ class CodaWriterTest {
         String fullCoda = String.join("\n", generatedLines);
         assertTrue(fullCoda.startsWith("0"), "Should start with header record (type 0)");
         assertTrue(fullCoda.contains("\n1"), "Should contain old balance record (type 1)");
-        assertTrue(fullCoda.contains("\n21"), "Should contain movement records (type 21)");
+
+        // Verify global record (line 3 - mandatory)
+        assertTrue(generatedLines.length >= 3, "Should have at least 3 lines");
+        String line3 = generatedLines[2]; // 0-indexed, so line 3 is index 2
+        assertTrue(line3.startsWith("21"), "Line 3 should be global record (type 21)");
+        assertEquals("1", line3.substring(124, 125), "Line 3 should have globalisation code = '1' at position 125");
+
+        assertTrue(fullCoda.contains("\n21"), "Should contain individual transaction records (type 21)");
         assertTrue(fullCoda.contains("\n8"), "Should contain new balance record (type 8)");
         assertTrue(fullCoda.contains("\n9"), "Should contain trailer record (type 9)");
     }
@@ -100,108 +113,142 @@ class CodaWriterTest {
      */
     private CodaStatement buildReferenceStatement() {
         // Header record (line 1)
-        HeaderRecord header = HeaderRecord.builder()
-            .sequenceNumber(0)
-            .versionCode("0")
+        // Example: 0000003032530005        04308988  AZA BELGIUM SA            GKCCBEBB   00404483367 00000                                       2
+        CodaHeaderRecord header = CodaHeaderRecord.builder()
+            .recordIdentification("0")
+            .zeros("0000")
             .creationDate(LocalDate.of(2025, 3, 3))
             .bankIdentificationNumber("300")
             .applicationCode("05")
-            .recipientName("04308988  AZA BELGIUM SA")
-            .bic("GKCCBEBB")
-            .accountNumber("00404483367 000")
-            .accountDescription("00")
-            .oldBalanceSign("")
-            .duplicateCode("2")
+            .duplicateCode(" ")
+            .filler1("       ")
+            .fileReference("04308988  ")
+            .nameAddressee("AZA BELGIUM SA            ")
+            .bic("GKCCBEBB   ")
+            .vatNumber("00404483367")
+            .filler2(" ")
+            .codeSeparateApplication("00000")
+            .transactionReference("                ")
+            .relatedReference("                ")
+            .filler3("       ")
+            .versionCode("2")
             .build();
 
         // Old balance record (line 2)
-        OldBalanceRecord oldBalance = OldBalanceRecord.builder()
-            .sequenceNumber(2)
-            .accountNumber("431000001706")
-            .accountNumberType("2")
-            .currencyCode(" EU")
-            .countryCode("R0")
+        // Example: 10024310000017062 EUR0BE   0030000        0000000170022110270225AZA BELGIUM SA            Compte à vue                       024
+        CodaOldBalanceRecord oldBalance = CodaOldBalanceRecord.builder()
+            .recordIdentification("1")
+            .accountStructure("0")
+            .statementNumber("024")
+            .accountNumber("4310000017062 EUR0BE   003000        ")
+            .oldBalanceSign("0")
             .oldBalance(new BigDecimal("300.00"))
-            .balanceDate(null)
-            .accountHolderName("0000170022110270225AZA BEL")
-            .accountDescription("GIUM SA            Compte à vue")
-            .sequenceNumberDetail(0)
+            .balanceDate(LocalDate.of(2025, 2, 11))
+            .accountHolderName("AZA BELGIUM SA            ")
+            .accountDescription("Compte à vue                       ")
+            .statementNumberDetail("024")
             .build();
 
-        // Movement records - 6 VCS transactions
-        List<MovementRecord> movements = new ArrayList<>();
-        
+        // Transaction records - 6 VCS transactions
+        List<CodaIndividualTransactionRecord> transactionRecords = new ArrayList<>();
+
         // VCS 1: UCAR
-        movements.add(createVcsMovement(1, "3010383003291000028", 
+        transactionRecords.add(createVcsTransaction(1, "3010383003291000028",
             new BigDecimal("2441.20"), LocalDate.of(2025, 3, 25),
             "REGROUPEMENT DE      6 VCS", "03032502410",
             "UCAR", "BE84390060159859", "GKCCBEBB",
             "BEKE TUINSTRAT 7", "9950", "WALESCHELT"));
         
         // VCS 2: FRANK VAN HULREBEDE CLOVIS
-        movements.add(createVcsMovement(2, "3010383003291000028",
+        transactionRecords.add(createVcsTransaction(2, "3010383003291000028",
             new BigDecimal("724.80"), LocalDate.of(2025, 3, 25),
             "102141359004019", "03032502401",
             "FRANK VAN HULREBEDE CLOVIS", "BE84390060159859", "GKCCBEBB",
             "WESTSTRAAT 105 A", "9950", "WALESCHELT"));
         
         // VCS 3: JOE JOHN
-        movements.add(createVcsMovement(3, "3010383003291000028",
+        transactionRecords.add(createVcsTransaction(3, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "102146453781091", "03032502401",
             "JOE JOHN", "BE03737623180684", "KREDBEBB",
             "BOSDORP              118", "9190", "ETEBELE"));
         
         // VCS 4: MARTINS-STILMAN PATRICE + MARTINE
-        movements.add(createVcsMovement(4, "3010383003291000028",
+        transactionRecords.add(createVcsTransaction(4, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "102146453781091", "03032502401",
             "MARTINS-STILMAN PATRICE + MARTINE", "BE03737623180684", "KREDBEBB",
             "BOSDORP              118", "9190", "ETEBELE"));
         
         // VCS 5: PAGLIARIC
-        movements.add(createVcsMovement(5, "3010383003291000028",
+        transactionRecords.add(createVcsTransaction(5, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "101146498769085", "03032502401",
             "PAGLIARIC", "BE63340091652308", "GKCCBEBB",
             "RUE DU CHENEUX 7", "4540", "AMAY"));
         
-        // VCS 6: LIZIERO ERBI NICODEMO
-        movements.add(createVcsMovement(6, "3010383003291000028",
+        // Liziero Erbi Nicodemo
+        transactionRecords.add(createVcsTransaction(6, "3010383003291000028",
             new BigDecimal("247.90"), LocalDate.of(2025, 3, 25),
             "101146498769085", "03032502411",
             "LIZIERO ERBI NICODEMO", "BE63340091652308", "GKCCBEBB",
             "RUE DE LA CLOCHE 46", "4540", "AMAY"));
 
+        // Global record (line 3 - mandatory)
+        CodaGlobalRecord globalRecord = CodaGlobalRecord.builder()
+            .recordIdentification("2")
+            .articleCode("1")
+            .continuousSequenceNumber("0001")
+            .detailNumber("0000")
+            .referenceNumber(String.format("%-21s", "03032502410"))
+            .movementSign("0")
+            .amount(new BigDecimal("2441.20"))
+            .valueDate(LocalDate.of(2025, 3, 25))
+            .transactionCode("20150000")
+            .communicationType("0")
+            .communicationZone(String.format("%-53s", "REGROUPEMENT DE      6 VCS"))
+            .entryDate(LocalDate.of(2025, 3, 25))
+            .statementNumber("123")
+            .globalisationCode("1")
+            .nextCode("0")
+            .filler(" ")
+            .linkCode("0")
+            .build();
+
         // New balance record
-        NewBalanceRecord newBalance = NewBalanceRecord.builder()
-            .sequenceNumber(24)
-            .accountNumber("243100000170")
-            .accountNumberType("6")
-            .currencyCode("2 E")
-            .countryCode("UR")
+        CodaNewBalanceRecord newBalance = CodaNewBalanceRecord.builder()
+            .recordIdentification("8")
+            .accountStructure("0")
+            .statementNumber("024")
+            .accountNumber("4310000017062 EUR0BE   003000        ")
+            .newBalanceSign("0")
             .newBalance(new BigDecimal("1702.66"))
             .balanceDate(LocalDate.of(2025, 3, 25))
+            .filler(String.format("%-63s", "") + "0")
             .build();
 
         // Trailer record
-        TrailerRecord trailer = TrailerRecord.builder()
-            .sequenceNumber(9)
+        CodaTrailerRecord trailer = CodaTrailerRecord.builder()
+            .recordIdentification("9")
+            .filler1(String.format("%-15s", ""))
             .numberOfRecords(33)
             .totalDebit(BigDecimal.ZERO)
             .totalCredit(new BigDecimal("2441.20"))
+            .filler2(String.format("%-75s", ""))
+            .trailerMarker("1")
             .build();
 
         return CodaStatement.builder()
             .header(header)
             .oldBalance(oldBalance)
-            .movements(movements)
+            .global(globalRecord)
+            .individualTransactions(transactionRecords)
             .newBalance(newBalance)
             .trailer(trailer)
             .build();
     }
 
-    private MovementRecord createVcsMovement(int seq, String transactionCode,
+    private CodaIndividualTransactionRecord createVcsTransaction(int seq, String transactionCode,
                                             BigDecimal amount, LocalDate date,
                                             String communication, String reference,
                                             String name, String iban, String bic,
@@ -212,27 +259,92 @@ class CodaWriterTest {
         String accountPrefix = String.format("%04d", seq == 1 ? 0 : seq - 1);
         String accountNumber = accountPrefix + accountSuffix;
 
-        return MovementRecord.builder()
-            .sequenceNumber(seq)
-            .accountNumber(accountNumber)
-            .transactionCode(transactionCode)
+        // Create Record 21 - Individual Transaction Main Data
+        CodaRecord21 record21 = CodaRecord21.builder()
+            .recordIdentification("2")
+            .articleCode("1")
+            .continuousSequenceNumber(String.format("%04d", seq))
+            .detailNumber("0000")
+            .referenceNumber(String.format("%-21s", reference))
+            .movementSign("0")
             .amount(amount)
             .valueDate(date)
-            .transactionReference(reference)
-            .communicationStructured(communication)
-            .transactionDate(date)
+            .transactionCode(transactionCode)
+            .communicationType("1")
+            .communicationZone(String.format("%-53s", communication))
+            .entryDate(date)
             .statementNumber("123")
-            .globalSequence("")
-            .statementSequence("0")
-            .counterpartyName(name)
-            .counterpartyBic(bic)
-            .counterpartyAccount(iban)
-            .counterpartyAccountName(name)
-            .counterpartyAddress(address)
-            .counterpartyPostalCode(postalCode)
-            .counterpartyCity(city)
+            .globalisationCode(seq == 1 ? "1" : "0")
+            .nextCode("1")
+            .filler(" ")
+            .linkCode("0")
+            .build();
+
+        // Create Record 22 - Communication
+        CodaRecord22 record22 = CodaRecord22.builder()
+            .recordIdentification("2")
+            .articleCode("2")
+            .continuousSequenceNumber(String.format("%04d", seq))
+            .detailNumber("0000")
+            .clientReference(String.format("%-53s", ""))
+            .counterpartyName(String.format("%-27s", name))
+            .counterpartyBic(String.format("%-11s", bic))
+            .filler1(String.format("%-24s", ""))
             .transactionCategory("1")
+            .filler2(" ")
+            .nextCode("0")
+            .build();
+
+        // Create Record 23 - Counterparty Account
+        CodaRecord23 record23 = CodaRecord23.builder()
+            .recordIdentification("2")
+            .articleCode("3")
+            .continuousSequenceNumber(String.format("%04d", seq))
+            .detailNumber("0000")
+            .counterpartyAccount(String.format("%-37s", iban))
+            .counterpartyAccountName(String.format("%-35s", name))
+            .filler1(String.format("%-43s", ""))
             .purposeCategory("0")
+            .filler2(" ")
+            .nextCode("1")
+            .build();
+
+        // Create Record 31 - Structured Communication
+        CodaRecord31 record31 = CodaRecord31.builder()
+            .recordIdentification("3")
+            .articleCode("1")
+            .continuousSequenceNumber(String.format("%04d", seq))
+            .detailNumber("0000")
+            .referenceNumber(String.format("%-21s", reference))
+            .transactionCode(transactionCode)
+            .structuredCommunication(String.format("%-73s", "001" + name))
+            .filler1(String.format("%-13s", ""))
+            .nextCode1("1")
+            .filler2(" ")
+            .nextCode2("0")
+            .build();
+
+        // Create Record 32 - Counterparty Address
+        CodaRecord32 record32 = CodaRecord32.builder()
+            .recordIdentification("3")
+            .articleCode("2")
+            .continuousSequenceNumber(String.format("%04d", seq))
+            .detailNumber("0000")
+            .counterpartyAddress(String.format("%-36s", address))
+            .counterpartyPostalCode(String.format("%-12s", postalCode))
+            .counterpartyCity(String.format("%-35s", city))
+            .filler1(String.format("%-32s", ""))
+            .nextCode1("0")
+            .filler2(" ")
+            .nextCode2("0")
+            .build();
+
+        return CodaIndividualTransactionRecord.builder()
+            .record21(record21)
+            .record22(record22)
+            .record23(record23)
+            .record31(record31)
+            .record32(record32)
             .build();
     }
 }

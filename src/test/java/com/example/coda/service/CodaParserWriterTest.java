@@ -3,7 +3,7 @@ package com.example.coda.service;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.example.coda.model.CodaStatement;
-import com.example.coda.model.MovementRecord;
+import com.example.coda.model.CodaIndividualTransactionRecord;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -28,26 +28,26 @@ class CodaParserWriterTest
 
       // Verify header
       assertNotNull(statement.getHeader());
-      assertTrue(statement.getHeader().getRecipientName().contains("AZA BELGIUM SA"));
+      assertTrue(statement.getHeader().getNameAddressee().contains("AZA BELGIUM SA"));
       assertNotNull(statement.getHeader().getBic(), "BIC should not be null");
       assertTrue(statement.getHeader().getBic().trim().length() > 0, 
             "BIC should have content, got: '" + statement.getHeader().getBic() + "'");
 
       // Verify old balance
       assertNotNull(statement.getOldBalance());
-      assertNotNull(statement.getOldBalance().getCurrencyCode());
-      assertTrue(statement.getOldBalance().getCurrencyCode().trim().length() >= 2, 
-            "Currency code should be at least 2 chars: " + statement.getOldBalance().getCurrencyCode());
+      assertNotNull(statement.getOldBalance().getAccountNumber());
+      assertTrue(statement.getOldBalance().getAccountNumber().trim().length() > 0,
+            "Account number should have content: " + statement.getOldBalance().getAccountNumber());
       assertNotNull(statement.getOldBalance().getOldBalance());
 
-      // Verify movements
-      assertNotNull(statement.getMovements());
-      assertTrue(statement.getMovements().size() > 0);
+      // Verify individual transactions
+      assertNotNull(statement.getIndividualTransactions());
+      assertTrue(statement.getIndividualTransactions().size() > 0);
 
-      // Check first movement
-      MovementRecord firstMovement = statement.getMovements().get(0);
-      assertNotNull(firstMovement);
-      assertNotNull(firstMovement.getAmount());
+      // Check first individual transaction
+      CodaIndividualTransactionRecord firstIndividualTransaction = statement.getIndividualTransactions().get(0);
+      assertNotNull(firstIndividualTransaction);
+      assertNotNull(firstIndividualTransaction.getAmount());
 
       // Verify new balance
       assertNotNull(statement.getNewBalance());
@@ -79,19 +79,19 @@ class CodaParserWriterTest
    }
 
    @Test
-   void parseExtractsMovementDetails() throws IOException
+   void parseExtractsTransactionDetails() throws IOException
    {
       String codaContent = new String(Files.readAllBytes(Paths.get("src/test/java/resources/coda_test.txt")));
       CodaStatement statement = parser.parse(codaContent);
 
-      // Find a movement with counterparty details
-      MovementRecord movement = statement.getMovements().stream()
+      // Find a transaction with counterparty details
+      CodaIndividualTransactionRecord transaction = statement.getIndividualTransactions().stream()
             .filter(m -> m.getCounterpartyAccountName() != null)
             .findFirst()
             .orElse(null);
 
-      assertNotNull(movement, "Should have at least one movement with counterparty");
-      assertNotNull(movement.getCounterpartyAccount());
+      assertNotNull(transaction, "Should have at least one transaction with counterparty");
+      assertNotNull(transaction.getCounterpartyAccount());
    }
 
    @Test
